@@ -102,53 +102,6 @@ else
   EXPORTS_FILE :=
 endif
 
-# ------------------------------- formatting ------------------------------------
-
-CLANG_FORMAT ?= clang-format
-# Prefer a repo-local clang-format binary if present
-TOOLS_DIR ?= tools
-LOCAL_CLANG_FORMAT := $(TOOLS_DIR)/clang-format
-ifneq ("$(wildcard $(LOCAL_CLANG_FORMAT))","")
-  CLANG_FORMAT := $(LOCAL_CLANG_FORMAT)
-endif
-
-# What to format: all C/H under lib/ (skip third_party by default)
-FMT_FILES := $(shell find lib -type f \( -name '*.c' -o -name '*.h' \))
-
-.PHONY: fmt format fmt-check format-check
-
-# Write changes in-place
-fmt format:
-	@command -v $(CLANG_FORMAT) >/dev/null || { echo "error: clang-format not found. Run 'make bootstrap-clang-format' to install a local copy."; exit 127; }
-	@echo "Formatting:" $(words $(FMT_FILES)) "files"
-	@$(CLANG_FORMAT) -i $(FMT_FILES)
-
-fmt-check format-check:
-	@command -v $(CLANG_FORMAT) >/dev/null || { echo "error: clang-format not found. Run 'make bootstrap-clang-format' to install a local copy."; exit 127; }
-	@$(CLANG_FORMAT) --version
-	@$(CLANG_FORMAT) -n --Werror $(FMT_FILES)
-	@echo "Formatting OK ✓"
-
-.PHONY: bootstrap-clang-format
-bootstrap-clang-format:
-	@mkdir -p $(TOOLS_DIR)
-	@if command -v $(CLANG_FORMAT) >/dev/null 2>&1; then \
-	  echo "clang-format already available: $$($(CLANG_FORMAT) --version)"; \
-	else \
-	  echo "Installing clang-format locally via npm…"; \
-	  npm init -y >/dev/null 2>&1 || true; \
-	  npm install --no-save clang-format >/dev/null || { echo "npm install failed"; exit 1; }; \
-	  BIN="node_modules/.bin/clang-format"; \
-	  if [ -x "$$BIN" ]; then \
-	    ln -sf ../$$BIN $(TOOLS_DIR)/clang-format; \
-	    echo "Installed local formatter at $(TOOLS_DIR)/clang-format"; \
-	    $(TOOLS_DIR)/clang-format --version; \
-	  else \
-	    echo "npm installed but $$BIN not found (check npm logs)."; \
-	    exit 1; \
-	  fi; \
-	fi
-
 # ------------------------------- targets ---------------------------------------
 
 .PHONY: all clean fclean symlink re test unit_test
@@ -219,3 +172,72 @@ fclean: clean
 	$(RM) -r build
 
 re: fclean all
+
+# ------------------------------- formatting ------------------------------------
+
+CLANG_FORMAT ?= clang-format
+TOOLS_DIR ?= tools
+LOCAL_CLANG_FORMAT := $(TOOLS_DIR)/clang-format
+# Prefer repo-local formatter if present
+ifneq ("$(wildcard $(LOCAL_CLANG_FORMAT))","")
+  CLANG_FORMAT := $(LOCAL_CLANG_FORMAT)
+endif
+
+# Files to format: all C/H under lib/ (skip third_party)
+FMT_FILES := $(shell find lib -type f \( -name '*.c' -o -name '*.h' \))
+FMT_VERBOSE ?= 1  # set to 1 for a file-by-file list
+
+.PHONY: fmt format fmt-check format-check bootstrap-clang-format
+
+define _fmt_header_write
+@echo "== clang-format (write) =="
+@echo "Files: $(words $(FMT_FILES))"
+endef
+
+define _fmt_header_check
+@echo "== clang-format (check) =="
+@echo "Files: $(words $(FMT_FILES))"
+endef
+
+# Write changes in-place
+fmt format:
+	@{ command -v $(CLANG_FORMAT) >/dev/null 2>&1 || [ -x "$(LOCAL_CLANG_FORMAT)" ]; } || { \
+	  echo "error: clang-format not found. Run 'make bootstrap-clang-format' to install a local copy."; exit 127; }
+	$(_fmt_header_write)
+ifneq ($(FMT_VERBOSE),0)
+	@printf '  %s\n' $(FMT_FILES)
+endif
+	@$(CLANG_FORMAT) -i $(FMT_FILES)
+
+# Check only (CI-friendly): nonzero exit if formatting is needed
+fmt-check format-check:
+	@{ command -v $(CLANG_FORMAT) >/dev/null 2>&1 || [ -x "$(LOCAL_CLANG_FORMAT)" ]; } || { \
+	  echo "error: clang-format not found. Run 'make bootstrap-clang-format' to install a local copy."; exit 127; }
+	$(_fmt_header_check)
+ifneq ($(FMT_VERBOSE),0)
+	@printf '  %s\n' $(FMT_FILES)
+endif
+	@$(CLANG_FORMAT) -n --Werror $(FMT_FILES) \
+	  || { echo "✗ Formatting needed. Run 'make fmt'."; exit 1; }
+	@echo "Formatting OK ✓"
+
+# Bootstrap a local clang-format with npm (no sudo)
+bootstrap-clang-format:
+	@mkdir -p $(TOOLS_DIR)
+	@if command -v $(CLANG_FORMAT) >/dev/null 2>&1; then \
+	  echo "clang-format already available: $$($(CLANG_FORMAT) --version)"; \
+	else \
+	  echo "Installing clang-format locally via npm…"; \
+	  npm init -y >/dev/null 2>&1 || true; \
+	  npm install --no-save clang-format >/dev/null || { echo "npm install failed"; exit 1; }; \
+	  BIN="node_modules/.bin/clang-format"; \
+	  if [ -x "$$BIN" ]; then \
+	    ln -sf ../$$BIN $(TOOLS_DIR)/clang-format; \
+	    echo "Installed local formatter at $(TOOLS_DIR)/clang-format"; \
+	    $(TOOLS_DIR)/clang-format --version; \
+	  else \
+	    echo "npm installed but $$BIN not found (check npm logs)."; \
+	    exit 1; \
+	  fi; \
+	fi
+
