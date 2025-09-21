@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   linked_list.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 16:37:04 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/21 17:06:51 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/22 12:23:59 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -96,4 +96,16 @@ void ft_ll_remove(ft_ll_node** head, ft_ll_node* n)
 	if (n->next)
 		n->next->prev = n->prev;
 	n->prev = n->next = NULL;
+}
+
+size_t ft_ll_len(ft_ll_node** head)
+{
+	if (!head || !*head)
+		return 0;
+	size_t len = 0;
+	FT_LL_FOR_EACH(it, *head)
+	{
+		++len;
+	}
+	return len;
 }

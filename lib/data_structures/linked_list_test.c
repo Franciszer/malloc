@@ -3,19 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   linked_list_test.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 17:34:54 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/21 17:34:56 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/22 12:50:52 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "munit.h"
 #include <stddef.h> // offsetof
 #include "data_structures/linked_list.h"
-
-/* Helper to get the container struct from a node pointer */
-#define container_of(ptr, type, member) ((type*)((char*)(ptr)-offsetof(type, member)))
 
 /* Small container type embedding the intrusive node */
 typedef struct {
@@ -226,7 +223,7 @@ static MunitResult test_iteration_and_safe_remove(const MunitParameter params[],
 	/* Remove even ids using SAFE variant while iterating */
 	FT_LL_FOR_EACH_SAFE(it, tmp, head)
 	{
-		item_t* it_item = container_of(it, item_t, node);
+		item_t* it_item = FT_CONTAINER_OF(it, item_t, node);
 		if ((it_item->id % 2) == 0) {
 			ft_ll_remove(&head, it);
 		}
@@ -241,6 +238,139 @@ static MunitResult test_iteration_and_safe_remove(const MunitParameter params[],
 	return MUNIT_OK;
 }
 
+/* --- ft_ll_len tests --- */
+
+static MunitResult test_len_empty(const MunitParameter params[], void* ud)
+{
+	(void)params;
+	(void)ud;
+	ft_ll_node* head = NULL;
+
+	size_t len = ft_ll_len(&head);
+
+	munit_assert_size(len, ==, 0);
+	munit_assert_ptr_null(head); /* call must not modify the head */
+	return MUNIT_OK;
+}
+
+static MunitResult test_len_single(const MunitParameter params[], void* ud)
+{
+	(void)params;
+	(void)ud;
+	ft_ll_node *head = NULL, n1;
+	ft_ll_init(&n1);
+
+	ft_ll_push_front(&head, &n1);
+	munit_assert_ptr_equal(head, &n1);
+
+	size_t before = (size_t)(head != NULL);
+	size_t len = ft_ll_len(&head);
+
+	munit_assert_size(len, ==, 1);
+	munit_assert_size(before, ==, 1);
+	munit_assert_ptr_equal(head, &n1); /* non-modifying */
+	return MUNIT_OK;
+}
+
+static MunitResult test_len_multiple_push_front(const MunitParameter params[], void* ud)
+{
+	(void)params;
+	(void)ud;
+	ft_ll_node *head = NULL, n1, n2, n3;
+	ft_ll_init(&n1);
+	ft_ll_init(&n2);
+	ft_ll_init(&n3);
+
+	ft_ll_push_front(&head, &n1);
+	ft_ll_push_front(&head, &n2);
+	ft_ll_push_front(&head, &n3);
+
+	size_t len = ft_ll_len(&head);
+	munit_assert_size(len, ==, 3);
+	/* list intact */
+	munit_assert_ptr_not_null(head);
+	munit_assert_ptr_equal(head, &n3);
+	return MUNIT_OK;
+}
+
+static MunitResult test_len_after_remove_and_pop(const MunitParameter params[], void* ud)
+{
+	(void)params;
+	(void)ud;
+	ft_ll_node *head = NULL, n1, n2, n3;
+	ft_ll_init(&n1);
+	ft_ll_init(&n2);
+	ft_ll_init(&n3);
+
+	/* head: n3 -> n2 -> n1 */
+	ft_ll_push_front(&head, &n1);
+	ft_ll_push_front(&head, &n2);
+	ft_ll_push_front(&head, &n3);
+	munit_assert_size(ft_ll_len(&head), ==, 3);
+
+	/* remove middle (n2) */
+	ft_ll_remove(&head, &n2);
+	munit_assert_size(ft_ll_len(&head), ==, 2);
+
+	/* pop head (n3) */
+	ft_ll_node* p = ft_ll_pop_front(&head);
+	munit_assert_ptr_equal(p, &n3);
+	munit_assert_size(ft_ll_len(&head), ==, 1);
+
+	/* pop last (n1) -> empty */
+	(void)ft_ll_pop_front(&head);
+	munit_assert_size(ft_ll_len(&head), ==, 0);
+	munit_assert_ptr_null(head);
+	return MUNIT_OK;
+}
+
+static MunitResult test_len_push_back_mixed(const MunitParameter params[], void* ud)
+{
+	(void)params;
+	(void)ud;
+	ft_ll_node *head = NULL, a, b, c, d;
+	ft_ll_init(&a);
+	ft_ll_init(&b);
+	ft_ll_init(&c);
+	ft_ll_init(&d);
+
+	ft_ll_push_back(&head, &a);
+	ft_ll_push_back(&head, &b);
+	ft_ll_push_front(&head, &c);
+	ft_ll_push_back(&head, &d);
+	/* c -> a -> b -> d */
+
+	size_t len = ft_ll_len(&head);
+	munit_assert_size(len, ==, 4);
+	return MUNIT_OK;
+}
+
+static MunitResult test_len_stress_many(const MunitParameter params[], void* ud)
+{
+	(void)params;
+	(void)ud;
+	enum { N = 256 };
+	ft_ll_node* head = NULL;
+	ft_ll_node nodes[N];
+
+	for (int i = 0; i < N; ++i) {
+		ft_ll_init(&nodes[i]);
+		/* alternate front/back to exercise links */
+		if (i & 1)
+			ft_ll_push_back(&head, &nodes[i]);
+		else
+			ft_ll_push_front(&head, &nodes[i]);
+	}
+	size_t len = ft_ll_len(&head);
+	munit_assert_size(len, ==, N);
+
+	/* Clear to avoid leaving dangling prev/next (local only, but tidy) */
+	for (int i = 0; i < N; ++i)
+		(void)ft_ll_pop_front(&head);
+	munit_assert_ptr_null(head);
+	return MUNIT_OK;
+}
+
 /* --- Assemble suite --- */
 static MunitTest tests[] = {
 	{"/init", test_init, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
@@ -249,6 +379,32 @@ static MunitTest tests[] = {
 	{"/push_back_order", test_push_back_order, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
 	{"/pop_front", test_pop_front, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
 	{"/remove_positions", test_remove_positions, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
+	{"/linked_list/len_empty", test_len_empty, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
+	{"/linked_list/len_single", test_len_single, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
+	{"/linked_list/len_multiple_push_front",
+	 test_len_multiple_push_front,
+	 NULL,
+	 NULL,
+	 MUNIT_TEST_OPTION_NONE,
+	 NULL},
+	{"/linked_list/len_after_remove_pop",
+	 test_len_after_remove_and_pop,
+	 NULL,
+	 NULL,
+	 MUNIT_TEST_OPTION_NONE,
+	 NULL},
+	{"/linked_list/len_push_back_mixed",
+	 test_len_push_back_mixed,
+	 NULL,
+	 NULL,
+	 MUNIT_TEST_OPTION_NONE,
+	 NULL},
+	{"/linked_list/len_stress_many",
+	 test_len_stress_many,
+	 NULL,
+	 NULL,
+	 MUNIT_TEST_OPTION_NONE,
+	 NULL},
 	{"/iteration_and_safe_remove",
 	 test_iteration_and_safe_remove,
 	 NULL,

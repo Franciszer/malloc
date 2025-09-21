@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   zone.h                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:07 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/21 19:27:52 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/22 11:15:22 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,5 +56,10 @@ void ft_zone_push_block(ft_zone* z, void* p); /* free one block in slab */
 /* --- helpers --- */
 int ft_zone_contains(const ft_zone* z, const void* p); /* ptr in block area? */
 size_t ft_zone_mapped_bytes(const ft_zone* z);		   /* mapping size */
+
+inline struct ft_zone* ft_zone_from_link(struct ft_ll_node* n);
+inline const struct ft_zone* ft_zone_from_link_const(const struct ft_ll_node* n);
+
+void ft_zone_list_destroy(ft_ll_node** head);
 
 #endif /* FT_ZONE_H */

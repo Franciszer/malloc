@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/21 19:33:59 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/22 18:00:27 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,4 +170,23 @@ size_t ft_zone_mapped_bytes(const ft_zone* z)
 	if (!z)
 		return 0;
 	return (size_t)((uintptr_t)z->map_end - (uintptr_t)z);
+}
+
+inline struct ft_zone* ft_zone_from_link(struct ft_ll_node* n)
+{
+	return n ? FT_CONTAINER_OF(n, struct ft_zone, link) : NULL;
+}
+inline const struct ft_zone* ft_zone_from_link_const(const struct ft_ll_node* n)
+{
+	return n ? FT_CONTAINER_OF_CONST(n, struct ft_zone, link) : NULL;
+}
+
+void ft_zone_list_destroy(ft_ll_node** head)
+{
+    if (!head || !*head) return;
+
+    for (ft_ll_node* n; (n = ft_ll_pop_front(head)); ) {
+        ft_zone* z = FT_CONTAINER_OF(n, ft_zone, link);
+        ft_zone_destroy(z);
+    }
 }

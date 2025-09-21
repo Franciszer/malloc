@@ -1,3 +1,15 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: francisco <francisco@student.42.fr>        +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
+#    Updated: 2025/09/22 12:49:07 by francisco        ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
 # Makefile — portable build for libft_malloc on Linux & macOS
 # Builds a shared library: libft_malloc_$(HOSTTYPE).so
 # Creates a symlink:      libft_malloc.so -> libft_malloc_$(HOSTTYPE).so
