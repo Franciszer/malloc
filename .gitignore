@@ -1,0 +1,18 @@
+# Build artifacts
+/build/
+libft_malloc.so
+libft_malloc_*.so
+
+# Debug symbols (macOS)
+/*.dSYM/
+
+# Logs
+*.log
+
+# OS / editor junk
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
