@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/21 19:02:38 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/21 19:33:59 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,8 +63,8 @@ ft_zone *ft_zone_new_slab(ft_zone_class klass, size_t bin_size, size_t min_block
     const size_t bsz  = ft_align_up(bin_size, FT_ALIGN);
 
     /* ensure at least min_blocks worth of space, rounded to pages */
-    size_t usable  = ft_align_up(bsz * (min_blocks ? min_blocks : 1), FT_ALIGN);
-    size_t total   = ft_align_up(hdr + usable, ps);
+    size_t usable_min  = ft_align_up(bsz * (min_blocks ? min_blocks : 1), FT_ALIGN);
+    size_t total       = ft_align_up(hdr + usable_min, ps);
 
     ft_zone *z = (ft_zone *)ft_map(total);
     if (!z) return NULL;
@@ -73,8 +73,13 @@ ft_zone *ft_zone_new_slab(ft_zone_class klass, size_t bin_size, size_t min_block
     z->klass      = klass;
     z->bin_size   = bsz;
     z->mem_begin  = (void *)((uintptr_t)z + hdr);
-    z->mem_end    = (void *)((uintptr_t)z + total);
-    z->capacity   = ((uintptr_t)z->mem_end - (uintptr_t)z->mem_begin) / bsz;
+
+    /* bytes available for blocks inside the mapping */
+    size_t raw_area = (size_t)((uintptr_t)z + total - (uintptr_t)z->mem_begin);
+    z->capacity   = raw_area / bsz;                          /* floor division */
+    z->mem_end    = (void *)((uintptr_t)z->mem_begin + z->capacity * bsz); /* payload end */
+    z->map_end    = (void *)((uintptr_t)z + total);          /* mapping end */
+
     z->free_count = z->capacity;
     z->free_head  = NULL;
 
@@ -101,7 +106,8 @@ ft_zone *ft_zone_new_large(size_t req_bytes) {
     z->capacity   = 1;
     z->free_count = 0;       /* allocated by definition */
     z->mem_begin  = (void *)((uintptr_t)z + hdr);
-    z->mem_end    = (void *)((uintptr_t)z + tot);
+    z->mem_end    = (void *)((uintptr_t)z->mem_begin + need); /* payload end */
+    z->map_end    = (void *)((uintptr_t)z + tot);             /* mapping end */
     z->free_head  = NULL;
 
     return z; /* payload starts at z->mem_begin */
@@ -109,8 +115,7 @@ ft_zone *ft_zone_new_large(size_t req_bytes) {
 
 void ft_zone_destroy(ft_zone *z) {
     if (!z) return;
-    size_t bytes = ft_zone_mapped_bytes(z);
-    ft_unmap(z, bytes);
+    ft_unmap(z, ft_zone_mapped_bytes(z));
 }
 
 /* ---------------- slab block ops ---------------- */
@@ -135,10 +140,11 @@ void ft_zone_push_block(ft_zone *z, void *p) {
 int ft_zone_contains(const ft_zone *z, const void *p) {
     if (!z || !p) return 0;
     uintptr_t a = (uintptr_t)p;
+    /* Only the payload/block area counts as "inside" for allocation purposes. */
     return (a >= (uintptr_t)z->mem_begin) && (a < (uintptr_t)z->mem_end);
 }
 
 size_t ft_zone_mapped_bytes(const ft_zone *z) {
     if (!z) return 0;
-    return (size_t)((uintptr_t)z->mem_end - (uintptr_t)z);
+    return (size_t)((uintptr_t)z->map_end - (uintptr_t)z);
 }

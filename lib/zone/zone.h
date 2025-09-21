@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:07 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/21 19:02:10 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/21 19:27:52 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,8 +36,9 @@ typedef struct ft_zone {
     size_t         bin_size;    /* slab block size; for LARGE: payload size */
     size_t         capacity;    /* # of blocks in slab; 1 for LARGE */
     size_t         free_count;  /* how many free blocks remain (slab) */
-    void          *mem_begin;   /* start of block area (aligned) */
-    void          *mem_end;     /* end of mapping (one past) */
+    void          *mem_begin;   /* start of block/payload area (aligned) */
+    void          *mem_end;     /* end of block/payload area (one past) */
+    void          *map_end;     /* end of mapping (one past) */
     void          *free_head;   /* slab free-list head (NULL for LARGE) */
 } ft_zone;
 
