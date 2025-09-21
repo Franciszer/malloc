@@ -16,3 +16,8 @@ libft_malloc_*.so
 *~
 .vscode/
 .idea/
+
+/tools/
+/node_modules/
+/package.json
+/package-lock.json
