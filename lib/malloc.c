@@ -15,23 +15,23 @@
 // !TODO
 void free(void* ptr)
 {
-    return;
+	return;
 }
 
 // !TODO
 void* malloc(size_t size)
 {
-    return NULL;
+	return NULL;
 }
 
 // !TODO
 void* realloc(void* ptr, size_t size)
 {
-    return NULL;
+	return NULL;
 }
 
 // !TODO
 void show_alloc_mem()
 {
-    return;
+	return;
 }

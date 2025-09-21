@@ -20,8 +20,8 @@
 ** Embed this as a field in any struct you want to link.
 */
 typedef struct ft_ll_node {
-    struct ft_ll_node* prev;
-    struct ft_ll_node* next;
+	struct ft_ll_node* prev;
+	struct ft_ll_node* next;
 } ft_ll_node;
 
 /* Initialize a node (detached state). */
@@ -47,7 +47,7 @@ void ft_ll_remove(ft_ll_node** head, ft_ll_node* n);
 
 /* Variant that allows removing 'it' safely during iteration. */
 #define FT_LL_FOR_EACH_SAFE(it, tmp, head)                                                         \
-    for (ft_ll_node* it = (head), *tmp = (it ? it->next : NULL); it != NULL;                       \
-         it = tmp, tmp = (it ? it->next : NULL))
+	for (ft_ll_node* it = (head), *tmp = (it ? it->next : NULL); it != NULL;                       \
+		 it = tmp, tmp = (it ? it->next : NULL))
 
 #endif /* FT_LINKED_LIST_H */

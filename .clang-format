@@ -6,14 +6,14 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/21 20:28:50 by frthierr          #+#    #+#              #
-#    Updated: 2025/09/21 20:28:54 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/21 20:53:43 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
-UseTab: Never
+UseTab: Always
 ColumnLimit: 100
 BreakBeforeBraces: Linux
 AllowShortIfStatementsOnASingleLine: false
