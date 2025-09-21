@@ -13,21 +13,25 @@
 #include "malloc.h"
 
 // !TODO
-void free(void *ptr) {
+void free(void* ptr)
+{
     return;
 }
 
 // !TODO
-void *malloc(size_t size) {
+void* malloc(size_t size)
+{
     return NULL;
 }
 
 // !TODO
-void *realloc(void *ptr, size_t size) {
+void* realloc(void* ptr, size_t size)
+{
     return NULL;
 }
 
 // !TODO
-void show_alloc_mem() {
+void show_alloc_mem()
+{
     return;
 }

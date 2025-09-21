@@ -16,11 +16,13 @@
 
 /* ---------------- alignment & pagesize ---------------- */
 
-size_t ft_align_up(size_t n, size_t a) {
+size_t ft_align_up(size_t n, size_t a)
+{
     return (n + (a - 1)) & ~(a - 1);
 }
 
-size_t ft_page_size(void) {
+size_t ft_page_size(void)
+{
 #ifdef __APPLE__
     /* Subject allows getpagesize() on macOS */
     return (size_t)getpagesize();
@@ -33,103 +35,120 @@ size_t ft_page_size(void) {
 
 /* ---------------- internal mmap helpers ---------------- */
 
-static void *ft_map(size_t bytes) {
-    void *p = mmap(NULL, bytes, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+static void* ft_map(size_t bytes)
+{
+    void* p = mmap(NULL, bytes, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     return (p == MAP_FAILED) ? NULL : p;
 }
 
-static void ft_unmap(void *p, size_t bytes) {
-    if (p && bytes) (void)munmap(p, bytes);
+static void ft_unmap(void* p, size_t bytes)
+{
+    if (p && bytes)
+        (void)munmap(p, bytes);
 }
 
 /* Free-list stored inside free blocks: first word is “next” */
-static inline void *ft_blk_pop(void **head) {
-    void *b = *head;
-    if (b) *head = *(void **)b;
+static inline void* ft_blk_pop(void** head)
+{
+    void* b = *head;
+    if (b)
+        *head = *(void**)b;
     return b;
 }
 
-static inline void ft_blk_push(void **head, void *b) {
-    *(void **)b = *head;
+static inline void ft_blk_push(void** head, void* b)
+{
+    *(void**)b = *head;
     *head = b;
 }
 
 /* ---------------- zone creation/destruction ---------------- */
 
-ft_zone *ft_zone_new_slab(ft_zone_class klass, size_t bin_size, size_t min_blocks) {
-    const size_t ps   = ft_page_size();
-    const size_t hdr  = ft_align_up(sizeof(ft_zone), FT_ALIGN);
-    const size_t bsz  = ft_align_up(bin_size, FT_ALIGN);
+ft_zone* ft_zone_new_slab(ft_zone_class klass, size_t bin_size, size_t min_blocks)
+{
+    const size_t ps = ft_page_size();
+    const size_t hdr = ft_align_up(sizeof(ft_zone), FT_ALIGN);
+    const size_t bsz = ft_align_up(bin_size, FT_ALIGN);
 
     /* ensure at least min_blocks worth of space, rounded to pages */
-    size_t usable_min  = ft_align_up(bsz * (min_blocks ? min_blocks : 1), FT_ALIGN);
-    size_t total       = ft_align_up(hdr + usable_min, ps);
+    size_t usable_min = ft_align_up(bsz * (min_blocks ? min_blocks : 1), FT_ALIGN);
+    size_t total = ft_align_up(hdr + usable_min, ps);
 
-    ft_zone *z = (ft_zone *)ft_map(total);
-    if (!z) return NULL;
+    ft_zone* z = (ft_zone*)ft_map(total);
+    if (!z)
+        return NULL;
 
     ft_ll_init(&z->link);
-    z->klass      = klass;
-    z->bin_size   = bsz;
-    z->mem_begin  = (void *)((uintptr_t)z + hdr);
+    z->klass = klass;
+    z->bin_size = bsz;
+    z->mem_begin = (void*)((uintptr_t)z + hdr);
 
     /* bytes available for blocks inside the mapping */
     size_t raw_area = (size_t)((uintptr_t)z + total - (uintptr_t)z->mem_begin);
-    z->capacity   = raw_area / bsz;                          /* floor division */
-    z->mem_end    = (void *)((uintptr_t)z->mem_begin + z->capacity * bsz); /* payload end */
-    z->map_end    = (void *)((uintptr_t)z + total);          /* mapping end */
+    z->capacity = raw_area / bsz;                                      /* floor division */
+    z->mem_end = (void*)((uintptr_t)z->mem_begin + z->capacity * bsz); /* payload end */
+    z->map_end = (void*)((uintptr_t)z + total);                        /* mapping end */
 
     z->free_count = z->capacity;
-    z->free_head  = NULL;
+    z->free_head = NULL;
 
     /* carve blocks into free list */
-    char *p = (char *)z->mem_begin;
+    char* p = (char*)z->mem_begin;
     for (size_t i = 0; i < z->capacity; ++i, p += bsz)
         ft_blk_push(&z->free_head, p);
 
     return z;
 }
 
-ft_zone *ft_zone_new_large(size_t req_bytes) {
-    const size_t ps   = ft_page_size();
-    const size_t hdr  = ft_align_up(sizeof(ft_zone), FT_ALIGN);
+ft_zone* ft_zone_new_large(size_t req_bytes)
+{
+    const size_t ps = ft_page_size();
+    const size_t hdr = ft_align_up(sizeof(ft_zone), FT_ALIGN);
     const size_t need = ft_align_up(req_bytes, FT_ALIGN);
-    const size_t tot  = ft_align_up(hdr + need, ps);
+    const size_t tot = ft_align_up(hdr + need, ps);
 
-    ft_zone *z = (ft_zone *)ft_map(tot);
-    if (!z) return NULL;
+    ft_zone* z = (ft_zone*)ft_map(tot);
+    if (!z)
+        return NULL;
 
     ft_ll_init(&z->link);
-    z->klass      = FT_Z_LARGE;
-    z->bin_size   = need;    /* payload size */
-    z->capacity   = 1;
-    z->free_count = 0;       /* allocated by definition */
-    z->mem_begin  = (void *)((uintptr_t)z + hdr);
-    z->mem_end    = (void *)((uintptr_t)z->mem_begin + need); /* payload end */
-    z->map_end    = (void *)((uintptr_t)z + tot);             /* mapping end */
-    z->free_head  = NULL;
+    z->klass = FT_Z_LARGE;
+    z->bin_size = need; /* payload size */
+    z->capacity = 1;
+    z->free_count = 0; /* allocated by definition */
+    z->mem_begin = (void*)((uintptr_t)z + hdr);
+    z->mem_end = (void*)((uintptr_t)z->mem_begin + need); /* payload end */
+    z->map_end = (void*)((uintptr_t)z + tot);             /* mapping end */
+    z->free_head = NULL;
 
     return z; /* payload starts at z->mem_begin */
 }
 
-void ft_zone_destroy(ft_zone *z) {
-    if (!z) return;
+void ft_zone_destroy(ft_zone* z)
+{
+    if (!z)
+        return;
     ft_unmap(z, ft_zone_mapped_bytes(z));
 }
 
 /* ---------------- slab block ops ---------------- */
 
-void *ft_zone_pop_block(ft_zone *z) {
-    if (!z || z->klass == FT_Z_LARGE) return NULL;
-    if (!z->free_head) return NULL;
-    void *p = ft_blk_pop(&z->free_head);
-    if (p) z->free_count--;
+void* ft_zone_pop_block(ft_zone* z)
+{
+    if (!z || z->klass == FT_Z_LARGE)
+        return NULL;
+    if (!z->free_head)
+        return NULL;
+    void* p = ft_blk_pop(&z->free_head);
+    if (p)
+        z->free_count--;
     return p;
 }
 
-void ft_zone_push_block(ft_zone *z, void *p) {
-    if (!z || z->klass == FT_Z_LARGE || !p) return;
+void ft_zone_push_block(ft_zone* z, void* p)
+{
+    if (!z || z->klass == FT_Z_LARGE || !p)
+        return;
     /* caller must ensure p is a block start aligned to bin_size */
     ft_blk_push(&z->free_head, p);
     z->free_count++;
@@ -137,14 +156,18 @@ void ft_zone_push_block(ft_zone *z, void *p) {
 
 /* ---------------- helpers ---------------- */
 
-int ft_zone_contains(const ft_zone *z, const void *p) {
-    if (!z || !p) return 0;
+int ft_zone_contains(const ft_zone* z, const void* p)
+{
+    if (!z || !p)
+        return 0;
     uintptr_t a = (uintptr_t)p;
     /* Only the payload/block area counts as "inside" for allocation purposes. */
     return (a >= (uintptr_t)z->mem_begin) && (a < (uintptr_t)z->mem_end);
 }
 
-size_t ft_zone_mapped_bytes(const ft_zone *z) {
-    if (!z) return 0;
+size_t ft_zone_mapped_bytes(const ft_zone* z)
+{
+    if (!z)
+        return 0;
     return (size_t)((uintptr_t)z->map_end - (uintptr_t)z);
 }
