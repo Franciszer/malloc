@@ -1,23 +1,12 @@
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    Makefile                                           :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/09/21 16:41:09 by frthierr          #+#    #+#              #
-#    Updated: 2025/09/21 16:55:17 by frthierr         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
-
 # Makefile — portable build for libft_malloc on Linux & macOS
 # Builds a shared library: libft_malloc_$(HOSTTYPE).so
 # Creates a symlink:      libft_malloc.so -> libft_malloc_$(HOSTTYPE).so
 # Objects & deps mirrored under build/ (e.g., lib/x/y.c -> build/x/y.o, build/x/y.d)
 # Knobs:
-#   DEBUG=1  -> add -g -O0 -DDEBUG
-#   SAN=1    -> add sanitizers (intended for unit-test binaries; may conflict with interposed malloc)
-#   EXPORTS=0-> disable symbol export lists (by default exports are enabled)
+#   DEBUG=1   -> add -g -O0 -DDEBUG
+#   SAN=1     -> add sanitizers (intended for unit-test binaries; may conflict with interposed malloc)
+#   EXPORTS=0 -> disable symbol export lists (by default exports are enabled)
+#   NO_VIS=1  -> disable -fvisibility=hidden
 
 # ------------------------------- host & toolchain -------------------------------
 
@@ -34,11 +23,29 @@ SYMLINK   := libft_malloc.so
 
 # ------------------------------- sources & objects ------------------------------
 
-# Discover all C sources under lib/
-SRCS      := $(shell find lib -name '*.c')
-# Mirror lib/%.c -> build/%.o
-OBJS      := $(patsubst lib/%.c,build/%.o,$(SRCS))
-DEPS      := $(OBJS:.o=.d)
+# All C under lib/
+ALL_LIB_SRCS := $(shell find lib -name '*.c')
+# Unit tests live next to sources and end with "_test.c"
+TEST_SRCS    := $(shell find lib -name '*_test.c')
+# Library sources exclude tests
+SRCS         := $(filter-out $(TEST_SRCS), $(ALL_LIB_SRCS))
+
+# Map lib/%.c -> build/%.o
+OBJS         := $(patsubst lib/%.c,build/%.o,$(SRCS))
+DEPS         := $(OBJS:.o=.d)
+
+# Exported API sources (exclude from unit-test link to avoid symbol conflicts)
+EXPORTED_SRCS ?= lib/malloc.c
+# Objects to link into tests (library code minus exported API)
+TEST_CORE_SRCS := $(filter-out $(EXPORTED_SRCS), $(SRCS))
+TEST_CORE_OBJS := $(patsubst lib/%.c,build/%.o,$(TEST_CORE_SRCS))
+
+# Unit test executables: lib/foo/bar_test.c -> build/tests/foo/bar_test.test
+TEST_BINS := $(patsubst lib/%.c,build/tests/%.test,$(TEST_SRCS))
+
+# Third-party (munit)
+THIRD_PARTY_SRCS := third_party/munit.c
+THIRD_PARTY_OBJS := $(patsubst %.c,build/%.o,$(THIRD_PARTY_SRCS))
 
 # ------------------------------- flags -----------------------------------------
 
@@ -47,8 +54,7 @@ CFLAGS   += -fPIC -Wall -Wextra -Ilib -MMD -MP
 LDFLAGS  ?=
 LDLIBS   ?=
 
-# Optional: hide non-API symbols by default (pair with export lists below)
-# Disable with: make NO_VIS=1
+# Optional visibility control
 ifeq ($(NO_VIS),)
 CFLAGS   += -fvisibility=hidden
 endif
@@ -59,7 +65,7 @@ ifeq ($(DEBUG),1)
   CFLAGS += -g -O0 -DDEBUG
 endif
 
-# Sanitizer knob (use for unit tests; ASan may conflict with interposed malloc)
+# Sanitizer knob (best used for tests; ASan may conflict with interposed malloc)
 ifeq ($(SAN),1)
   CFLAGS  += -fsanitize=address,undefined -fno-omit-frame-pointer
   LDFLAGS += -fsanitize=address,undefined
@@ -67,7 +73,6 @@ endif
 
 # ------------------------------- platform link mode -----------------------------
 
-# Default to using export lists; disable with EXPORTS=0
 EXPORTS ?= 1
 
 ifeq ($(UNAME_S),Linux)
@@ -83,14 +88,12 @@ else ifeq ($(UNAME_S),Darwin)
   EXPORTS_FLAG_DEF  := -Wl,-exported_symbols_list,$(EXPORTS_OSX)
   EXPORTS_FILE_DEF  := $(EXPORTS_OSX)
 else
-  # Fallback (other UNIX)
   SHARED_FLAG       := -shared
   SONAME_FLAG       :=
   EXPORTS_FLAG_DEF  :=
   EXPORTS_FILE_DEF  :=
 endif
 
-# Allow disabling export lists
 ifeq ($(EXPORTS),1)
   EXPORTS_FLAG := $(EXPORTS_FLAG_DEF)
   EXPORTS_FILE := $(EXPORTS_FILE_DEF)
@@ -101,7 +104,7 @@ endif
 
 # ------------------------------- targets ---------------------------------------
 
-.PHONY: all clean fclean symlink
+.PHONY: all clean fclean symlink re test unit_test
 
 all: $(TARGET) symlink
 
@@ -118,10 +121,15 @@ build/%.o: lib/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Third-party objects (munit)
+build/third_party/%.o: third_party/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Ithird_party -c $< -o $@
+
 # Auto-generated dependency files
 -include $(DEPS)
 
-# Generate export list for Linux (version script)
+# Export list for Linux
 build/exports.map:
 	@mkdir -p $(dir $@)
 	@printf '%s\n' '{' \
@@ -134,12 +142,29 @@ build/exports.map:
 	'    *;' \
 	'};' > $@
 
-# Generate export list for macOS (note leading underscores)
+# Export list for macOS (note leading underscores)
 build/exports_osx.txt:
 	@mkdir -p $(dir $@)
 	@printf '%s\n' '_malloc' '_free' '_realloc' '_show_alloc_mem' > $@
 
-# Cleaning rules
+# ------------------------------- unit tests ------------------------------------
+
+# Build each *_test.c into its own executable, link with: munit + core objects
+build/tests/%.test: lib/%.c $(TEST_CORE_OBJS) $(THIRD_PARTY_OBJS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Ithird_party $< $(TEST_CORE_OBJS) $(THIRD_PARTY_OBJS) -o $@ $(LDFLAGS) $(LDLIBS)
+
+# Run all unit tests
+test unit_test: $(TEST_BINS)
+	@set -e; \
+	if [ -z "$(TEST_BINS)" ]; then \
+	  echo "No unit tests found (looking for *_test.c under lib/)"; \
+	else \
+	  for t in $(TEST_BINS); do echo "🏃 $$t"; "$$t"; done; \
+	fi
+
+# ------------------------------- cleaning --------------------------------------
+
 clean:
 	$(RM) $(TARGET) $(SYMLINK)
 
