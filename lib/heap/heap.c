@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/23 00:28:49 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/23 00:36:34 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -258,7 +258,7 @@ size_t ft_heap_total_free_in_class(ft_zone_class klass)
 }
 
 // helper: pick the right list by class
-static inline ft_ll_node **flist_for(ft_zone_class k) {
+static inline ft_ll_node **list_for(ft_zone_class k) {
     return (k == FT_Z_TINY) ? &g_ft_heap.tiny
          : (k == FT_Z_SMALL) ? &g_ft_heap.small
                              : &g_ft_heap.large;

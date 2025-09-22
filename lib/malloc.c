@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/20 16:17:02 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/23 00:17:29 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/23 00:38:25 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,4 +39,8 @@ void* realloc(void* ptr, size_t size) {
     void* np = ft_heap_realloc(ptr, size);
     if (!np && size) errno = ENOMEM;
     return np;
+}
+
+void show_alloc_mem() {
+	// TODO!
 }

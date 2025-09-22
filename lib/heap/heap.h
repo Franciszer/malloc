@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 22:32:52 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/23 00:27:15 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/23 00:37:36 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,10 @@ size_t ft_heap_zone_count(ft_zone_class klass);
 
 /* Sum of free blocks across all slab zones in a class (LARGE excluded). */
 size_t ft_heap_total_free_in_class(ft_zone_class klass);
+
+static inline ft_ll_node **list_for(ft_zone_class k);
+
+static inline void ll_unlink(ft_ll_node **head, ft_ll_node *node);
 
 #ifdef __cplusplus
 } /* extern "C" */
