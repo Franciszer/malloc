@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   heap.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/22 19:22:10 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/23 00:28:49 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,20 @@
 
 ft_heap g_ft_heap = {0};
 
+static const size_t TINY_BINS[]  = { 16, 32, 64, TINY_MAX };
+static const size_t SMALL_BINS[] = { 256, 512, 1024, 2048, SMALL_MAX };
+
+
+// all bins must be multiples of FT_ALIGN
+_Static_assert((TINY_MAX  % FT_ALIGN) == 0,  "TINY_MAX must be aligned");
+_Static_assert((SMALL_MAX % FT_ALIGN) == 0,  "SMALL_MAX must be aligned");
+
+// class boundaries must match bin tops
+_Static_assert(TINY_BINS[ARRAY_LEN(TINY_BINS)-1]  == TINY_MAX,  "max TINY bin = TINY_MAX");
+_Static_assert(SMALL_BINS[ARRAY_LEN(SMALL_BINS)-1]== SMALL_MAX, "max SMALL bin = SMALL_MAX");
+
+// classes should not overlap
+_Static_assert(TINY_MAX < SMALL_BINS[0], "SMALL must start above TINY");
 
 /* Init all lists empty + set min_blocks knobs. */
 void ft_heap_init(size_t tiny_min_blocks, size_t small_min_blocks)
@@ -186,9 +200,6 @@ ft_zone_class ft_heap_classify(size_t n)
  * Example: TINY bins {16,32,64,128}, SMALL {256,512,1024,2048,4096}. */
 size_t ft_heap_pick_bin_size(ft_zone_class klass, size_t n)
 {
-	static const size_t TINY_BINS[] = {16, 32, 64, 128};
-	static const size_t SMALL_BINS[] = {256, 512, 1024, 2048, 4096};
-
 	n = ft_align_up(n, FT_ALIGN);
 
 	if (klass == FT_Z_TINY)
@@ -247,7 +258,7 @@ size_t ft_heap_total_free_in_class(ft_zone_class klass)
 }
 
 // helper: pick the right list by class
-static inline ft_ll_node **list_for(ft_zone_class k) {
+static inline ft_ll_node **flist_for(ft_zone_class k) {
     return (k == FT_Z_TINY) ? &g_ft_heap.tiny
          : (k == FT_Z_SMALL) ? &g_ft_heap.small
                              : &g_ft_heap.large;
