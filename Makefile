@@ -6,7 +6,7 @@
 #    By: francisco <francisco@student.42.fr>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/22 12:49:07 by francisco        ###   ########.fr        #
+#    Updated: 2025/09/23 01:08:32 by francisco        ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -62,7 +62,7 @@ THIRD_PARTY_OBJS := $(patsubst %.c,build/%.o,$(THIRD_PARTY_SRCS))
 # ------------------------------- flags -----------------------------------------
 
 CFLAGS   ?= -O2
-CFLAGS   += -fPIC -Wall -Wextra -Ilib -MMD -MP
+CFLAGS   += -std=c11 -fPIC -Wall -Wextra -Ilib -MMD -MP
 LDFLAGS  ?=
 LDLIBS   ?=
 
@@ -180,7 +180,7 @@ test unit_test: $(TEST_BINS)
 clean:
 	$(RM) $(TARGET) $(SYMLINK)
 
-fclean: clean
+fclean: clean clean-bootstrap
 	$(RM) -r build
 
 re: fclean all
@@ -253,3 +253,67 @@ bootstrap-clang-format:
 	  fi; \
 	fi
 
+clean-clang-format:
+	rm -rf package.json tools
+# ---- IntelliSense bootstrap (VS Code) ----
+.PHONY: bootstrap-intellisense bootstrap clean-intellisense clean-bootstrap
+
+# Detect IntelliSense mode + compiler
+ifeq ($(UNAME_S),Darwin)
+  INTELLI_MODE := $(if $(findstring arm64,$(HOSTTYPE)),macos-clang-arm64,macos-clang-x64)
+  INTELLI_COMP := /usr/bin/clang
+else ifeq ($(UNAME_S),Linux)
+  INTELLI_MODE := $(if $(findstring aarch64,$(HOSTTYPE)),linux-clang-arm64,linux-clang-x64)
+  INTELLI_COMP := $(shell command -v clang 2>/dev/null || echo /usr/bin/clang)
+else
+  INTELLI_MODE := linux-clang-x64
+  INTELLI_COMP := $(shell command -v clang 2>/dev/null || echo /usr/bin/clang)
+endif
+
+# Helper: if compile_commands.json exists, add a line to c_cpp_properties.json
+define _emit_compile_commands_json
+@if [ -f compile_commands.json ]; then \
+  printf '      ,\"compileCommands\": \"$$PWD/compile_commands.json\"\n' >> .vscode/c_cpp_properties.json; \
+fi
+endef
+
+bootstrap-intellisense:
+	@mkdir -p .vscode
+	@echo "Writing .vscode/c_cpp_properties.json for $(UNAME_S) ($(HOSTTYPE))"
+	@{ \
+	  printf '{\n'; \
+	  printf '  "configurations": [\n'; \
+	  printf '    {\n'; \
+	  printf '      "name": "%s-%s",\n' "$(UNAME_S)" "$(HOSTTYPE)"; \
+	  printf '      "compilerPath": "%s",\n' "$(INTELLI_COMP)"; \
+	  printf '      "intelliSenseMode": "%s",\n' "$(INTELLI_MODE)"; \
+	  printf '      "cStandard": "c11",\n'; \
+	  printf '      "cppStandard": "c++17",\n'; \
+	  printf '      "includePath": [\n'; \
+	  printf '        "${workspaceFolder}/lib",\n'; \
+	  printf '        "${workspaceFolder}/lib/**",\n'; \
+	  printf '        "${workspaceFolder}/third_party"\n'; \
+	  printf '      ],\n'; \
+	  printf '      "defines": []\n'; \
+	  printf '    }\n'; \
+	  printf '  ],\n'; \
+	  printf '  "version": 4\n'; \
+	  printf '}\n'; \
+	} > .vscode/c_cpp_properties.json
+	@# Optionally prefer Makefile Tools to supply flags (works even without it installed)
+	@printf '{\n  "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",\n  "C_Cpp.default.intelliSenseMode": "%s"\n}\n' "$(INTELLI_MODE)" > .vscode/settings.json
+	@$(call _emit_compile_commands_json)
+	@echo "VS Code IntelliSense bootstrapped ✓"
+
+# Aggregate bootstrap
+bootstrap: bootstrap-clang-format bootstrap-intellisense
+	@echo "Bootstrap complete ✓"
+
+# Clean only the IntelliSense artifacts produced by bootstrap-intellisense
+clean-intellisense:
+	@rm -f .vscode/c_cpp_properties.json .vscode/settings.json
+	@rmdir .vscode 2>/dev/null || true
+
+# Clean all bootstrap artifacts (extend as needed)
+clean-bootstrap: clean-intellisense
+	@rm -f tools/clang-format
