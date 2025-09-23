@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:16:46 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/22 19:21:55 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/23 19:45:23 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,3 +51,23 @@ void* ft_memcpy(void* dst, const void* src, size_t n)
 
 	return dst;
 }
+
+/* ---------------- alignment & pagesize ---------------- */
+
+size_t ft_align_up(size_t n, size_t a)
+{
+	return (n + (a - 1)) & ~(a - 1);
+}
+
+size_t ft_page_size(void)
+{
+#ifdef __APPLE__
+	/* Subject allows getpagesize() on macOS */
+	return (size_t)getpagesize();
+#else
+	/* Subject allows sysconf(_SC_PAGESIZE) on Linux */
+	long ps = sysconf(_SC_PAGESIZE);
+	return (ps > 0) ? (size_t)ps : 4096u;
+#endif
+}
+

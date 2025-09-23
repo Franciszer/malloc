@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:25:08 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/22 19:21:47 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/23 21:33:44 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,11 @@
 #define HELPERS_H
 
 #include <stddef.h> // size_t
+#include <unistd.h>
+
+
+/* Alignment for returned payloads and internal pointers (heap & zone agree) */
+#define FT_ALIGN 16
 
 /* Length of a fixed-size array (only works when the expression is an array,
    not a pointer). */
@@ -35,5 +40,9 @@ size_t lb_ge_size_t(const size_t* arr, size_t len, size_t key);
    Copies n bytes from src to dst; returns dst.
    Overlap is **undefined** (just like memcpy). */
 void* ft_memcpy(void* dst, const void* src, size_t n);
+
+size_t ft_page_size(void);
+size_t ft_align_up(size_t n, size_t a);
+
 
 #endif /* HELPERS_H */

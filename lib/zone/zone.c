@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/23 18:03:43 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/23 21:36:19 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,24 +33,11 @@
 	"Anonymous mmap flags unavailable. On Linux define _DEFAULT_SOURCE (or _GNU_SOURCE); on macOS define _DARWIN_C_SOURCE."
 #endif
 
-/* ---------------- alignment & pagesize ---------------- */
+// static declarations
 
-size_t ft_align_up(size_t n, size_t a)
-{
-	return (n + (a - 1)) & ~(a - 1);
-}
-
-size_t ft_page_size(void)
-{
-#ifdef __APPLE__
-	/* Subject allows getpagesize() on macOS */
-	return (size_t)getpagesize();
-#else
-	/* Subject allows sysconf(_SC_PAGESIZE) on Linux */
-	long ps = sysconf(_SC_PAGESIZE);
-	return (ps > 0) ? (size_t)ps : 4096u;
-#endif
-}
+static size_t ft_zone_find_first_free_block(const t_zone* z);
+static t_zone* ft_zone_make_large(size_t hdr, size_t ps, size_t need);
+static t_zone*ft_zone_make_slab(t_zone_class klass, size_t hdr, size_t ps, size_t bsz, size_t min_blocks);
 
 /* ---------------- internal mmap helpers ---------------- */
 
@@ -66,93 +53,87 @@ static void ft_unmap(void* p, size_t bytes)
 		(void)munmap(p, bytes);
 }
 
-/* Free-list stored inside free blocks: first word is “next” */
-static inline void* ft_blk_pop(void** head)
-{
-	void* b = *head;
-	if (b)
-		*head = *(void**)b;
-	return b;
-}
-
-static inline void ft_blk_push(void** head, void* b)
-{
-	*(void**)b = *head;
-	*head = b;
-}
-
 /* ---------------- zone creation/destruction ---------------- */
 
-/* --- zone lifecycle --- */
-ft_zone* ft_zone_new(ft_zone_class klass, size_t bin_size, size_t min_blocks)
-{
-	const size_t ps = ft_page_size();
-	const size_t hdr = ft_align_up(sizeof(ft_zone), FT_ALIGN);
-	const size_t bsz = ft_align_up(bin_size, FT_ALIGN);
+// t_zone_new: create either a slab (FT_Z_TINY/FT_Z_SMALL) or a large zone (FT_Z_LARGE).
+// - Slab: payload = capacity * bsz, then occ[capacity] right after payload.
+// - Large: capacity = 1, no occ[].
+// Requires: ft_page_size(), ft_align_up(), ft_ll_init(), and your mmap wrappers (ft_map/ft_unmap)
+// in zone.c.
 
+t_zone* ft_zone_new(t_zone_class klass, size_t bin_size, size_t min_blocks)
+{
+	const size_t ps = ft_page_size();						  // from helpers
+	const size_t hdr = ft_align_up(sizeof(t_zone), FT_ALIGN); // keep payload aligned
+
+	if (klass == FT_Z_LARGE) {
+		const size_t need = ft_align_up(bin_size ? bin_size : 1, FT_ALIGN);
+		return ft_zone_make_large(hdr, ps, need);
+	}
+
+	const size_t bsz = ft_align_up(bin_size ? bin_size : 1, FT_ALIGN);
+	const size_t mb = min_blocks ? min_blocks : 1;
+	return ft_zone_make_slab(klass, hdr, ps, bsz, mb);
 }
 
-ft_zone* ft_zone_new_slab(ft_zone_class klass, size_t bin_size, size_t min_blocks)
+static t_zone* ft_zone_make_large(size_t hdr, size_t ps, size_t need)
 {
-	const size_t ps = ft_page_size();
-	const size_t hdr = ft_align_up(sizeof(ft_zone), FT_ALIGN);
-	const size_t bsz = ft_align_up(bin_size, FT_ALIGN);
-
-	/* ensure at least min_blocks worth of space, rounded to pages */
-	size_t usable_min = ft_align_up(bsz * (min_blocks ? min_blocks : 1), FT_ALIGN);
-	size_t total = ft_align_up(hdr + usable_min, ps);
-
-	ft_zone* z = (ft_zone*)ft_map(total);
-	if (!z)
-		return NULL;
-
-	ft_ll_init(&z->link);
-	z->klass = klass;
-	z->bin_size = bsz;
-	z->mem_begin = (void*)((uintptr_t)z + hdr);
-
-	/* bytes available for blocks inside the mapping */
-	size_t raw_area = (size_t)((uintptr_t)z + total - (uintptr_t)z->mem_begin);
-	z->capacity = raw_area / bsz;									   /* floor division */
-	z->mem_end = (void*)((uintptr_t)z->mem_begin + z->capacity * bsz); /* payload end */
-	z->map_end = (void*)((uintptr_t)z + total);						   /* mapping end */
-
-	z->free_count = z->capacity;
-	z->free_head = NULL;
-
-	/* carve blocks into free list */
-	char* p = (char*)z->mem_begin;
-	for (size_t i = 0; i < z->capacity; ++i, p += bsz)
-		ft_blk_push(&z->free_head, p);
-
-	return z;
-}
-
-ft_zone* ft_zone_new_large(size_t req_bytes)
-{
-	const size_t ps = ft_page_size();
-	const size_t hdr = ft_align_up(sizeof(ft_zone), FT_ALIGN);
-	const size_t need = ft_align_up(req_bytes, FT_ALIGN);
-	const size_t tot = ft_align_up(hdr + need, ps);
-
-	ft_zone* z = (ft_zone*)ft_map(tot);
+	const size_t total = ft_align_up(hdr + need, ps);
+	t_zone* z = (t_zone*)ft_map(total);
 	if (!z)
 		return NULL;
 
 	ft_ll_init(&z->link);
 	z->klass = FT_Z_LARGE;
-	z->bin_size = need; /* payload size */
+	z->bin_size = need;
 	z->capacity = 1;
-	z->free_count = 0; /* allocated by definition */
+	z->free_count = 0;
 	z->mem_begin = (void*)((uintptr_t)z + hdr);
-	z->mem_end = (void*)((uintptr_t)z->mem_begin + need); /* payload end */
-	z->map_end = (void*)((uintptr_t)z + tot);			  /* mapping end */
-	z->free_head = NULL;
-
-	return z; /* payload starts at z->mem_begin */
+	z->mem_end = (void*)((uintptr_t)z->mem_begin + need);
+	z->occ = NULL;
+	z->map_end = (void*)((uintptr_t)z + total);
+	return z;
 }
 
-void ft_zone_destroy(ft_zone* z)
+static t_zone*
+ft_zone_make_slab(t_zone_class klass, size_t hdr, size_t ps, size_t bsz, size_t min_blocks)
+{
+	// each block costs: payload (bsz) + 1 byte in occ[]
+	const size_t total_min = hdr + min_blocks * (bsz + 1);
+	const size_t total = ft_align_up(total_min, ps);
+	const size_t raw = total - hdr;
+	const size_t cap = raw / (bsz + 1);
+	if (cap == 0)
+		return NULL;
+
+	const size_t pay_bytes = cap * bsz;
+
+	t_zone* z = (t_zone*)ft_map(total);
+	if (!z)
+		return NULL;
+
+	ft_ll_init(&z->link);
+	z->klass = klass; // FT_Z_TINY / FT_Z_SMALL
+	z->bin_size = bsz;
+	z->capacity = cap;
+	z->free_count = cap;
+
+	z->mem_begin = (void*)((uintptr_t)z + hdr);
+	z->mem_end = (void*)((uintptr_t)z->mem_begin + pay_bytes);
+
+	// occ[] sits right after payload; length == capacity
+	z->occ = (uint8_t*)z->mem_end;
+
+	z->map_end = (void*)((uintptr_t)z + total);
+
+	// If FT_OCC_FREE == 0 (recommended), mmap zero-fill means occ[] is already “all free”.
+	// If you use FT_OCC_FREE == 1, initialize here:
+	// for (size_t i = 0; i < cap; ++i) z->occ[i] = FT_OCC_FREE;
+
+	return z;
+}
+
+void ft_zone_destroy(t_zone* z)
 {
 	if (!z)
 		return;
@@ -161,30 +142,40 @@ void ft_zone_destroy(ft_zone* z)
 
 /* ---------------- slab block ops ---------------- */
 
-void* ft_zone_pop_block(ft_zone* z)
+void* ft_zone_alloc_block(t_zone* z)
 {
-	if (!z || z->klass == FT_Z_LARGE)
+	if (!z || z->klass == FT_Z_LARGE || !(z->free_count))
 		return NULL;
-	if (!z->free_head)
+
+	size_t free_blk_idx = ft_zone_find_first_free_block(z);
+
+	if (free_blk_idx == FT_MALLOC_ERR_SLAB_INDEX(z))
 		return NULL;
-	void* p = ft_blk_pop(&z->free_head);
-	if (p)
-		z->free_count--;
-	return p;
+
+	z->free_count--;
+	
+	z->occ[free_blk_idx] = FT_OCC_USED;
+	return (void*)((char*)z->mem_begin + free_blk_idx * z->bin_size); 
 }
 
-void ft_zone_push_block(ft_zone* z, void* p)
+void ft_zone_free_block(t_zone* z, void* p)
 {
-	if (!z || z->klass == FT_Z_LARGE || !p)
-		return;
-	/* caller must ensure p is a block start aligned to bin_size */
-	ft_blk_push(&z->free_head, p);
-	z->free_count++;
-}
+    if (!z || z->klass == FT_Z_LARGE || !p) return;
 
+    // Optional: fast bail if outside
+    if (!ft_zone_contains(z, p)) return;
+
+    size_t idx = ft_zone_index_of(z, p);
+    if (idx >= z->capacity) return;         // defensive
+
+    if (z->occ[idx] == FT_OCC_USED) {
+        z->occ[idx] = FT_OCC_FREE;
+        z->free_count++;
+    }
+}
 /* ---------------- helpers ---------------- */
 
-int ft_zone_contains(const ft_zone* z, const void* p)
+int ft_zone_contains(const t_zone* z, const void* p)
 {
 	if (!z || !p)
 		return 0;
@@ -193,29 +184,21 @@ int ft_zone_contains(const ft_zone* z, const void* p)
 	return (a >= (uintptr_t)z->mem_begin) && (a < (uintptr_t)z->mem_end);
 }
 
-size_t ft_zone_mapped_bytes(const ft_zone* z)
+size_t ft_zone_mapped_bytes(const t_zone* z)
 {
 	if (!z)
 		return 0;
 	return (size_t)((uintptr_t)z->map_end - (uintptr_t)z);
 }
 
-inline struct ft_zone* ft_zone_from_link(struct ft_ll_node* n)
+// returns index of free block
+// FT_MALLOC_ERR_SLAB_INDEX if none
+static size_t ft_zone_find_first_free_block(const t_zone* z)
 {
-	return n ? FT_CONTAINER_OF(n, struct ft_zone, link) : NULL;
-}
-inline const struct ft_zone* ft_zone_from_link_const(const struct ft_ll_node* n)
-{
-	return n ? FT_CONTAINER_OF_CONST(n, struct ft_zone, link) : NULL;
-}
-
-void ft_zone_list_destroy(ft_ll_node** head)
-{
-	if (!head || !*head)
-		return;
-
-	for (ft_ll_node* n; (n = ft_ll_pop_front(head));) {
-		ft_zone* z = FT_CONTAINER_OF(n, ft_zone, link);
-		ft_zone_destroy(z);
+	for (size_t i = 0; i < z->capacity; i++) {
+		if (!z->occ[i])
+			return i;
 	}
+
+	return FT_MALLOC_ERR_SLAB_INDEX(z);
 }
