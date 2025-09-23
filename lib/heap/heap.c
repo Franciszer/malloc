@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   heap.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
+/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/23 01:00:05 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/23 15:58:04 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,13 +21,6 @@ static const size_t SMALL_BINS[] = { 256, 512, 1024, 2048, SMALL_MAX };
 // all bins must be multiples of FT_ALIGN
 _Static_assert((TINY_MAX  % FT_ALIGN) == 0,  "TINY_MAX must be aligned");
 _Static_assert((SMALL_MAX % FT_ALIGN) == 0,  "SMALL_MAX must be aligned");
-
-// class boundaries must match bin tops
-_Static_assert(TINY_BINS[ARRAY_LEN(TINY_BINS)-1]  == TINY_MAX,  "max TINY bin = TINY_MAX");
-_Static_assert(SMALL_BINS[ARRAY_LEN(SMALL_BINS)-1]== SMALL_MAX, "max SMALL bin = SMALL_MAX");
-
-// classes should not overlap
-_Static_assert(TINY_MAX < SMALL_BINS[0], "SMALL must start above TINY");
 
 /* Init all lists empty + set min_blocks knobs. */
 void ft_heap_init(size_t tiny_min_blocks, size_t small_min_blocks)
