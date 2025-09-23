@@ -6,13 +6,32 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/22 18:00:27 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/23 15:52:12 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "zone.h"
 #include <sys/mman.h>
 #include <unistd.h>
+
+/* ---------------- Portability ---------------- */
+
+#ifndef MAP_ANONYMOUS
+#  ifdef MAP_ANON
+#    define MAP_ANONYMOUS MAP_ANON
+#  endif
+#endif
+
+#ifndef MAP_ANON
+#  ifdef MAP_ANONYMOUS
+#    define MAP_ANON MAP_ANONYMOUS
+#  endif
+#endif
+
+#if !defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
+#  error "Anonymous mmap flags unavailable. On Linux define _DEFAULT_SOURCE (or _GNU_SOURCE); on macOS define _DARWIN_C_SOURCE."
+#endif
+
 
 /* ---------------- alignment & pagesize ---------------- */
 

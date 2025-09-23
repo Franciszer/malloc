@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: francisco <francisco@student.42.fr>        +#+  +:+       +#+         #
+#    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/23 01:13:35 by francisco        ###   ########.fr        #
+#    Updated: 2025/09/23 15:45:32 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,6 +24,16 @@
 
 CC       ?= cc
 UNAME_S   := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+  # glibc: expose “misc/GNU” APIs (MAP_ANONYMOUS, etc.)
+  CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE
+endif
+
+ifeq ($(UNAME_S),Darwin)
+  # Darwin/BSD: expose full C/POSIX/BSD surface (MAP_ANON, etc.)
+  CFLAGS += -D_DARWIN_C_SOURCE
+endif
 
 # Subject requirement: define HOSTTYPE if empty
 ifeq ($(HOSTTYPE),)
