@@ -38,15 +38,16 @@ size_t lb_ge_size_t(const size_t* arr, size_t len, size_t key)
 
 void* ft_memcpy(void* dst, const void* src, size_t n)
 {
-    /* memcpy semantics: if n==0, OK even if pointers are NULL.
-       If regions overlap and n>0, behavior is undefined (we just copy forward). */
-    if (dst == src || n == 0) return dst;
+	/* memcpy semantics: if n==0, OK even if pointers are NULL.
+	   If regions overlap and n>0, behavior is undefined (we just copy forward). */
+	if (dst == src || n == 0)
+		return dst;
 
-    unsigned char*       d = (unsigned char*)dst;
-    const unsigned char* s = (const unsigned char*)src;
+	unsigned char* d = (unsigned char*)dst;
+	const unsigned char* s = (const unsigned char*)src;
 
-    for (size_t i = 0; i < n; ++i)
-        d[i] = s[i];
+	for (size_t i = 0; i < n; ++i)
+		d[i] = s[i];
 
-    return dst;
+	return dst;
 }

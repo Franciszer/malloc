@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:07 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/23 15:51:41 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/23 18:02:11 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,8 @@ typedef struct ft_zone {
 size_t ft_page_size(void);				/* getpagesize/sysconf */
 size_t ft_align_up(size_t n, size_t a); /* round up to multiple of a */
 
+/* --- zone lifecycle --- */
+ft_zone* ft_zone_new(ft_zone_class klass, size_t bin_size, size_t min_blocks);
 /* --- zone lifecycle --- */
 ft_zone* ft_zone_new_slab(ft_zone_class klass,
 						  size_t bin_size,

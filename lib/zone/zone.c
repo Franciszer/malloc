@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/23 15:52:12 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/23 18:03:43 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,21 +17,21 @@
 /* ---------------- Portability ---------------- */
 
 #ifndef MAP_ANONYMOUS
-#  ifdef MAP_ANON
-#    define MAP_ANONYMOUS MAP_ANON
-#  endif
+#ifdef MAP_ANON
+#define MAP_ANONYMOUS MAP_ANON
+#endif
 #endif
 
 #ifndef MAP_ANON
-#  ifdef MAP_ANONYMOUS
-#    define MAP_ANON MAP_ANONYMOUS
-#  endif
+#ifdef MAP_ANONYMOUS
+#define MAP_ANON MAP_ANONYMOUS
+#endif
 #endif
 
 #if !defined(MAP_ANONYMOUS) && !defined(MAP_ANON)
-#  error "Anonymous mmap flags unavailable. On Linux define _DEFAULT_SOURCE (or _GNU_SOURCE); on macOS define _DARWIN_C_SOURCE."
+#error                                                                                             \
+	"Anonymous mmap flags unavailable. On Linux define _DEFAULT_SOURCE (or _GNU_SOURCE); on macOS define _DARWIN_C_SOURCE."
 #endif
-
 
 /* ---------------- alignment & pagesize ---------------- */
 
@@ -82,6 +82,15 @@ static inline void ft_blk_push(void** head, void* b)
 }
 
 /* ---------------- zone creation/destruction ---------------- */
+
+/* --- zone lifecycle --- */
+ft_zone* ft_zone_new(ft_zone_class klass, size_t bin_size, size_t min_blocks)
+{
+	const size_t ps = ft_page_size();
+	const size_t hdr = ft_align_up(sizeof(ft_zone), FT_ALIGN);
+	const size_t bsz = ft_align_up(bin_size, FT_ALIGN);
+
+}
 
 ft_zone* ft_zone_new_slab(ft_zone_class klass, size_t bin_size, size_t min_blocks)
 {
@@ -202,10 +211,11 @@ inline const struct ft_zone* ft_zone_from_link_const(const struct ft_ll_node* n)
 
 void ft_zone_list_destroy(ft_ll_node** head)
 {
-    if (!head || !*head) return;
+	if (!head || !*head)
+		return;
 
-    for (ft_ll_node* n; (n = ft_ll_pop_front(head)); ) {
-        ft_zone* z = FT_CONTAINER_OF(n, ft_zone, link);
-        ft_zone_destroy(z);
-    }
+	for (ft_ll_node* n; (n = ft_ll_pop_front(head));) {
+		ft_zone* z = FT_CONTAINER_OF(n, ft_zone, link);
+		ft_zone_destroy(z);
+	}
 }
