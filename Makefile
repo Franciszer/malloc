@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/23 15:45:32 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/24 18:05:45 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -222,7 +222,7 @@ define _fmt_header_check
 endef
 
 # Write changes in-place
-fmt format:
+fmt format: bootstrap-clang-format
 	@{ command -v $(CLANG_FORMAT) >/dev/null 2>&1 || [ -x "$(LOCAL_CLANG_FORMAT)" ]; } || { \
 	  echo "error: clang-format not found. Run 'make bootstrap-clang-format' to install a local copy."; exit 127; }
 	$(_fmt_header_write)
