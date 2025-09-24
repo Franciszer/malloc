@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:07 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/23 21:35:39 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/24 15:02:50 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,9 +42,9 @@ typedef struct s_zone {
 	void* map_end;	 /* one-past-end of the whole mapping */
 
 	/* ---- slab occupancy (array-of-bytes), unused for LARGE ----
-    Stored INSIDE this mapping, right after the payload region.
-    Length == capacity; values are FT_OCC_FREE or FT_OCC_USED.
-    */
+	Stored INSIDE this mapping, right after the payload region.
+	Length == capacity; values are FT_OCC_FREE or FT_OCC_USED.
+	*/
 	uint8_t* occ; /* NULL for LARGE */
 } t_zone;
 
@@ -92,6 +92,9 @@ int ft_zone_contains(const t_zone* z, const void* p);
 
 /* Total bytes mapped for this zone (header + metadata + payload). */
 size_t ft_zone_mapped_bytes(const t_zone* z);
+
+/* True if the zone can hand out at least one block (LARGE or slab). */
+int ft_zone_has_space(const t_zone* z);
 
 /* Handy block <-> index helpers (inline) */
 static inline void* ft_zone_block_at(const t_zone* z, size_t i)

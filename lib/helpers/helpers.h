@@ -16,7 +16,6 @@
 #include <stddef.h> // size_t
 #include <unistd.h>
 
-
 /* Alignment for returned payloads and internal pointers (heap & zone agree) */
 #define FT_ALIGN 16
 
@@ -43,6 +42,5 @@ void* ft_memcpy(void* dst, const void* src, size_t n);
 
 size_t ft_page_size(void);
 size_t ft_align_up(size_t n, size_t a);
-
 
 #endif /* HELPERS_H */

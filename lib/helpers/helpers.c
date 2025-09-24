@@ -70,4 +70,3 @@ size_t ft_page_size(void)
 	return (ps > 0) ? (size_t)ps : 4096u;
 #endif
 }
-

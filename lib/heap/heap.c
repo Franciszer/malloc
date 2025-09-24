@@ -1,285 +1,226 @@
-// /* ************************************************************************** */
-// /*                                                                            */
-// /*                                                        :::      ::::::::   */
-// /*   heap.c                                             :+:      :+:    :+:   */
-// /*                                                    +:+ +:+         +:+     */
-// /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
-// /*                                                +#+#+#+#+#+   +#+           */
-// /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-// /*   Updated: 2025/09/23 15:58:04 by frthierr         ###   ########.fr       */
-// /*                                                                            */
-// /* ************************************************************************** */
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   heap.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
+/*   Updated: 2025/09/24 18:02:35 by frthierr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-// #include "heap.h"
+#include "heap.h"
 
-// ft_heap g_ft_heap = {0};
+#include "heap.h"
+#include "zone/zone_list.h" // for ft_zone_ll_destroy, _first_with_space, _find_container_of
 
-// static const size_t TINY_BINS[] = {16, 32, 64, TINY_MAX};
-// static const size_t SMALL_BINS[] = {256, 512, 1024, 2048, SMALL_MAX};
+static inline ft_ll_node** list_for(t_zone_class k);
+static inline size_t ft_bin_size_for_k(t_zone_class k);
 
-// // all bins must be multiples of FT_ALIGN
-// _Static_assert((TINY_MAX % FT_ALIGN) == 0, "TINY_MAX must be aligned");
-// _Static_assert((SMALL_MAX % FT_ALIGN) == 0, "SMALL_MAX must be aligned");
+t_heap g_heap = {0};
 
-// /* Init all lists empty + set min_blocks knobs. */
-// void ft_heap_init(size_t tiny_min_blocks, size_t small_min_blocks)
-// {
-// 	g_ft_heap.tiny = NULL;
-// 	g_ft_heap.small = NULL;
-// 	g_ft_heap.large = NULL;
-// 	g_ft_heap.tiny_min_blocks = tiny_min_blocks;
-// 	g_ft_heap.small_min_blocks = small_min_blocks;
-// }
+/* Constructor */
+__attribute__((constructor)) static void ft_heap_ctor(void)
+{
+	ft_heap_init(TINY_MAX, SMALL_MAX);
+}
 
-// /* Unmap every zone in tiny/small/large and reset to init state. */
-// void ft_heap_destroy(void)
-// {
-// 	ft_zone_list_destroy(&g_ft_heap.tiny);
-// 	ft_zone_list_destroy(&g_ft_heap.small);
-// 	ft_zone_list_destroy(&g_ft_heap.large);
+/* Destructor */
+__attribute__((destructor)) static void ft_heap_dtor(void)
+{
+	ft_heap_destroy();
+}
 
-// 	g_ft_heap.tiny = NULL;
-// 	g_ft_heap.small = NULL;
-// 	g_ft_heap.large = NULL;
+/* Init all lists empty + set min_blocks knobs. */
+void ft_heap_init(size_t tiny_min_blocks, size_t small_min_blocks)
+{
+	g_heap = (t_heap){0}; // initializes every field to 0
+	g_heap.tiny_min_blocks = tiny_min_blocks;
+	g_heap.small_min_blocks = small_min_blocks;
+}
 
-// 	g_ft_heap.tiny_min_blocks = 0;
-// 	g_ft_heap.small_min_blocks = 0;
-// }
+/* Unmap every zone in tiny/small/large and reset to init state. */
+void ft_heap_destroy(void)
+{
+	for (int i = 0; i < N_ZONE_CATEGORIES; ++i) {
+		ft_zone_ll_destroy(&g_heap.zls[i]);
+	}
 
-// /* Allocator entry points (used by tests and wired by your malloc.c) */
-// void* ft_heap_malloc(size_t n);
-// void* ft_heap_malloc(size_t n)
-// {
-// 	// 1) normalize & align the requested size
-// 	size_t need = ft_align_up(n ? n : 1, FT_ALIGN);
+	g_heap.tiny_min_blocks = 0;
+	g_heap.small_min_blocks = 0;
+}
 
-// 	// 2) classify AFTER alignment
-// 	ft_zone_class k = ft_heap_classify(need);
+/* Allocator entry points (used by tests and wired by your malloc.c) */
+void* ft_heap_malloc(size_t n)
+{
+	// 1) normalize & align
+	size_t need = ft_align_up(n ? n : 1, FT_ALIGN);
 
-// 	// 3) LARGE → one mapping per allocation
-// 	if (k == FT_Z_LARGE) {
-// 		ft_zone* z = ft_zone_new_large(need);
-// 		if (!z)
-// 			return NULL;
-// 		ft_ll_push_front(list_for(FT_Z_LARGE), &z->link);
-// 		return z->mem_begin;
-// 	}
+	// 2) classify
+	t_zone_class k = ft_heap_classify(need);
+	ft_ll_node** head = list_for(k);
 
-// 	// 4) TINY/SMALL → pick exact-size slab bin (first >= need)
-// 	size_t bin = ft_heap_pick_bin_size(k, need);
-// 	if (!bin) {
-// 		// defensive fallback if bins don't fully cover thresholds (shouldn't happen)
-// 		ft_zone* z = ft_zone_new_large(need);
-// 		if (!z)
-// 			return NULL;
-// 		ft_ll_push_front(list_for(FT_Z_LARGE), &z->link);
-// 		return z->mem_begin;
-// 	}
+	// 3) LARGE → one mapping per allocation
+	if (k == FT_Z_LARGE) {
+		t_zone* z = t_zone_new_large(need); // inline wrapper to ft_zone_new
+		if (!z)
+			return NULL;
+		ft_ll_push_front(head, &z->link);
+		return z->mem_begin;
+	}
 
-// 	// 5) find an existing slab zone with the same bin and spare blocks
-// 	ft_ll_node** head = list_for(k);
-// 	ft_zone* z_with_space = NULL;
+	// 4) TINY/SMALL → find an existing zone with space
+	t_zone* z = ft_zone_ll_first_with_space(*head);
 
-// 	FT_LL_FOR_EACH(it, *head)
-// 	{
-// 		ft_zone* z = FT_CONTAINER_OF(it, ft_zone, link);
-// 		if (z->bin_size == bin && z->free_count > 0) {
-// 			z_with_space = z;
-// 			break;
-// 		}
-// 	}
+	// 5) none → create one
+	if (!z) {
+		size_t min_blocks = (k == FT_Z_TINY) ? g_heap.tiny_min_blocks : g_heap.small_min_blocks;
+		if (min_blocks < 1)
+			min_blocks = 1;
 
-// 	// 6) none found → create one
-// 	if (!z_with_space) {
-// 		size_t min_blocks =
-// 			(k == FT_Z_TINY) ? g_ft_heap.tiny_min_blocks : g_ft_heap.small_min_blocks;
-// 		if (min_blocks < 1)
-// 			min_blocks = 1;
+		size_t bin_size = ft_bin_size_for_k(k);
+		z = ft_zone_new(k, bin_size, min_blocks);
+		if (!z)
+			return NULL;
 
-// 		z_with_space = ft_zone_new_slab(k, bin, min_blocks);
-// 		if (!z_with_space)
-// 			return NULL;
+		ft_ll_push_front(head, &z->link); // <-- push the NEW zone
+	}
 
-// 		ft_ll_push_front(head, &z_with_space->link);
-// 	}
+	// 6) allocate a block from that zone
+	return ft_zone_alloc_block(z); // returns NULL only if race/logic bug
+}
 
-// 	// 7) pop a block from the free list (already FT_ALIGN aligned)
-// 	void* p = ft_zone_pop_block(z_with_space);
-// 	return p; // may be NULL only if unexpected race/logic bug
-// }
+void ft_heap_free(void* p)
+{
+	if (!p)
+		return;
 
-// void ft_heap_free(void* p)
-// {
-// 	if (!p)
-// 		return;
+	t_zone* z = ft_heap_find_owner(p);
+	if (!z) {
+		// invalid free
+		return;
+	}
 
-// 	ft_zone* z = ft_heap_find_owner(p);
-// 	if (!z) {
-// 		// invalid free: ignore or add a debug assert
-// 		return;
-// 	}
+	if (z->klass == FT_Z_LARGE) {
+		// unlink & unmap whole LARGE zone
+		ft_ll_node** head = list_for(FT_Z_LARGE);
+		ft_ll_remove(head, &z->link);
+		ft_zone_destroy(z);
+		return;
+	}
 
-// 	if (z->klass == FT_Z_LARGE) {
-// 		// unlink from LARGE list and unmap
-// 		ft_ll_node** head = list_for(FT_Z_LARGE);
-// 		ll_unlink(head, &z->link);
-// 		ft_zone_destroy(z);
-// 		return;
-// 	}
+	// slab: return block
+	ft_zone_free_block(z, p);
 
-// 	// slab: return block to free list
-// 	// caller is expected to pass a block start; zone code pushes blindly
-// 	ft_zone_push_block(z, p);
+	// trim of fully-empty zone:
+	if (z->free_count == z->capacity) {
+		ft_ll_node** head = list_for(z->klass);
+		ft_ll_remove(head, &z->link);
+		ft_zone_destroy(z);
+	}
+}
 
-// 	// Optional trimming (disabled by default to reduce munmap):
-// 	// if (z->free_count == z->capacity) {
-// 	//     ft_ll_node **head = list_for(z->klass);
-// 	//     ll_unlink(head, &z->link);
-// 	//     ft_zone_destroy(z);
-// 	// }
-// }
+/* Optional for later: */
+void* ft_heap_realloc(void* p, size_t n)
+{
+	if (!p)
+		return ft_heap_malloc(n);
+	if (n == 0) {
+		ft_heap_free(p);
+		return NULL;
+	}
 
-// /* Optional for later: */
-// void* ft_heap_realloc(void* p, size_t n)
-// {
-// 	if (!p)
-// 		return ft_heap_malloc(n);
-// 	if (n == 0) {
-// 		ft_heap_free(p);
-// 		return NULL;
-// 	}
+	t_zone* z = ft_heap_find_owner(p);
+	if (!z) {
+		// undefined by C; we choose to fail safe
+		return NULL;
+	}
 
-// 	ft_zone* z = ft_heap_find_owner(p);
-// 	if (!z) {
-// 		// invalid pointer for realloc -> undefined by C; here we fail safe
-// 		return NULL;
-// 	}
+	size_t need = ft_align_up(n, FT_ALIGN);
 
-// 	size_t need = ft_align_up(n, FT_ALIGN);
+	if (z->klass != FT_Z_LARGE) {
+		// If it still fits in this slab block, keep it
+		if (need <= z->bin_size)
+			return p;
 
-// 	if (z->klass != FT_Z_LARGE) {
-// 		// slab: if it still fits, keep it
-// 		if (need <= z->bin_size) {
-// 			return p;
-// 		}
-// 		// else grow: allocate new, copy, free old
-// 		void* np = ft_heap_malloc(need);
-// 		if (!np)
-// 			return NULL;
+		// Grow: allocate new, copy min(old,new), free old
+		void* np = ft_heap_malloc(need);
+		if (!np)
+			return NULL;
 
-// 		size_t to_copy = (z->bin_size < need) ? z->bin_size : need;
-// 		ft_memcpy(np, p, to_copy);
-// 		ft_heap_free(p);
-// 		return np;
-// 	}
+		size_t to_copy = (z->bin_size < need) ? z->bin_size : need;
+		ft_memcpy(np, p, to_copy);
+		ft_heap_free(p);
+		return np;
+	}
 
-// 	// LARGE: we could shrink-in-place if need <= old, else move
-// 	if (need <= z->bin_size) {
-// 		return p; // keep same mapping when shrinking
-// 	}
+	// LARGE: keep if shrinking, otherwise move
+	if (need <= z->bin_size)
+		return p;
 
-// 	void* np = ft_heap_malloc(need);
-// 	if (!np)
-// 		return NULL;
+	void* np = ft_heap_malloc(need);
+	if (!np)
+		return NULL;
 
-// 	size_t to_copy = (z->bin_size < need) ? z->bin_size : need;
-// 	ft_memcpy(np, p, to_copy);
-// 	ft_heap_free(p);
-// 	return np;
-// }
+	size_t to_copy = (z->bin_size < need) ? z->bin_size : need;
+	ft_memcpy(np, p, to_copy);
+	ft_heap_free(p);
+	return np;
+}
 
-// /* ---- helpers (tested) ---- */
+/* ---- helpers (tested) ---- */
 
-// /* Classify request into TINY/SMALL/LARGE.
-//  */
-// ft_zone_class ft_heap_classify(size_t n)
-// {
-// 	if (n == 0)
-// 		n = 1;
-// 	return (n <= TINY_MAX) ? FT_Z_TINY : (n <= SMALL_MAX) ? FT_Z_SMALL : FT_Z_LARGE;
-// }
+/* Classify request into TINY/SMALL/LARGE.
+ */
+t_zone_class ft_heap_classify(size_t n)
+{
+	n = n ? n : 1;
+	return (n <= TINY_MAX) ? FT_Z_TINY : (n <= SMALL_MAX) ? FT_Z_SMALL : FT_Z_LARGE;
+}
 
-// /* Decide the slab block size for a class.
-//  * Must return a multiple of FT_ALIGN and >= n.
-//  * Example: TINY bins {16,32,64,128}, SMALL {256,512,1024,2048,4096}. */
-// size_t ft_heap_pick_bin_size(ft_zone_class klass, size_t n)
-// {
-// 	n = ft_align_up(n, FT_ALIGN);
+t_zone* ft_heap_find_owner(const void* p)
+{
+	if (!p)
+		return NULL;
+	for (size_t i = 0; i < N_ZONE_CATEGORIES; ++i) {
+		ft_ll_node* head = g_heap.zls[i];
+		t_zone* z = ft_zone_ll_find_container_of(head, p);
+		if (z)
+			return z;
+	}
+	return NULL;
+}
 
-// 	if (klass == FT_Z_TINY)
-// 		return LB_GE(TINY_BINS, n);
-// 	if (klass == FT_Z_SMALL)
-// 		return LB_GE(SMALL_BINS, n);
-// 	return 0;
-// }
+size_t ft_heap_zone_count(t_zone_class klass)
+{
+	return ft_ll_len(&g_heap.zls[klass]);
+}
 
-// /* Find which zone owns 'p' by scanning tiny/small/large lists.
-//  * Return NULL if not found. */
-// ft_zone* ft_heap_find_owner(const void* p)
-// {
-// 	// zone lists
-// 	ft_ll_node* zls[3] = {g_ft_heap.tiny, g_ft_heap.small, g_ft_heap.large};
+size_t ft_heap_total_free_in_class(t_zone_class klass)
+{
+	if (klass == FT_Z_LARGE)
+		return 0;
 
-// 	for (size_t i = 0; i < 3; i++) {
-// 		// zone list
-// 		ft_ll_node* zl = zls[i];
+	size_t total = 0;
+	ft_ll_node* head = g_heap.zls[klass];
 
-// 		FT_LL_FOR_EACH(it, zl)
-// 		{
-// 			ft_zone* z = FT_CONTAINER_OF(it, ft_zone, link);
+	FT_LL_FOR_EACH(it, head)
+	{
+		t_zone* z = FT_CONTAINER_OF(it, t_zone, link);
+		if (z->klass == klass)
+			total += z->free_count;
+	}
+	return total;
+}
 
-// 			if (ft_zone_contains(z, p))
-// 				return z;
-// 		}
-// 	}
-// 	return NULL;
-// }
+// pick the right list by class
+static inline ft_ll_node** list_for(t_zone_class k)
+{
+	return &g_heap.zls[k];
+}
 
-// /* Count zones in a class list. */
-// size_t ft_heap_zone_count(ft_zone_class klass)
-// {
-// 	ft_ll_node* zl = (klass == FT_Z_TINY)	 ? g_ft_heap.tiny
-// 					 : (klass == FT_Z_SMALL) ? g_ft_heap.small
-// 											 : g_ft_heap.large;
-// 	return ft_ll_len(&zl);
-// }
-
-// /* Sum of free blocks across all slab zones in a class (LARGE excluded). */
-// size_t ft_heap_total_free_in_class(ft_zone_class klass)
-// {
-// 	if (klass == FT_Z_LARGE)
-// 		return 0;
-
-// 	ft_ll_node* zl = (klass == FT_Z_TINY) ? g_ft_heap.tiny : g_ft_heap.small;
-// 	size_t total = 0;
-
-// 	FT_LL_FOR_EACH(it, zl)
-// 	{
-// 		ft_zone* z = FT_CONTAINER_OF(it, ft_zone, link);
-// 		/* defensive: ensure we only count matching class and slab zones */
-// 		if (z->klass == klass /* && z->kind == FT_ZONE_SLAB */)
-// 			total += z->free_count;
-// 	}
-// 	return total;
-// }
-
-// // helper: pick the right list by class
-// static inline ft_ll_node** list_for(ft_zone_class k)
-// {
-// 	return (k == FT_Z_TINY)	   ? &g_ft_heap.tiny
-// 		   : (k == FT_Z_SMALL) ? &g_ft_heap.small
-// 							   : &g_ft_heap.large;
-// }
-
-// static inline void ll_unlink(ft_ll_node** head, ft_ll_node* node)
-// {
-// 	if (!head || !node)
-// 		return;
-// 	if (node->prev)
-// 		node->prev->next = node->next;
-// 	else
-// 		*head = node->next;
-// 	if (node->next)
-// 		node->next->prev = node->prev;
-// 	node->prev = node->next = NULL;
-// }
+static inline size_t ft_bin_size_for_k(t_zone_class k)
+{
+	return (k == FT_Z_TINY) ? TINY_MAX : SMALL_MAX; // one bin per class
+}
