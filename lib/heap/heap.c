@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/24 18:02:35 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/24 19:03:25 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 #include "heap.h"
 #include "zone/zone_list.h" // for ft_zone_ll_destroy, _first_with_space, _find_container_of
 
-static inline ft_ll_node** list_for(t_zone_class k);
+static inline t_ll_node** list_for(t_zone_class k);
 static inline size_t ft_bin_size_for_k(t_zone_class k);
 
 t_heap g_heap = {0};
@@ -59,7 +59,7 @@ void* ft_heap_malloc(size_t n)
 
 	// 2) classify
 	t_zone_class k = ft_heap_classify(need);
-	ft_ll_node** head = list_for(k);
+	t_ll_node** head = list_for(k);
 
 	// 3) LARGE → one mapping per allocation
 	if (k == FT_Z_LARGE) {
@@ -104,7 +104,7 @@ void ft_heap_free(void* p)
 
 	if (z->klass == FT_Z_LARGE) {
 		// unlink & unmap whole LARGE zone
-		ft_ll_node** head = list_for(FT_Z_LARGE);
+		t_ll_node** head = list_for(FT_Z_LARGE);
 		ft_ll_remove(head, &z->link);
 		ft_zone_destroy(z);
 		return;
@@ -115,7 +115,7 @@ void ft_heap_free(void* p)
 
 	// trim of fully-empty zone:
 	if (z->free_count == z->capacity) {
-		ft_ll_node** head = list_for(z->klass);
+		t_ll_node** head = list_for(z->klass);
 		ft_ll_remove(head, &z->link);
 		ft_zone_destroy(z);
 	}
@@ -184,7 +184,7 @@ t_zone* ft_heap_find_owner(const void* p)
 	if (!p)
 		return NULL;
 	for (size_t i = 0; i < N_ZONE_CATEGORIES; ++i) {
-		ft_ll_node* head = g_heap.zls[i];
+		t_ll_node* head = g_heap.zls[i];
 		t_zone* z = ft_zone_ll_find_container_of(head, p);
 		if (z)
 			return z;
@@ -203,7 +203,7 @@ size_t ft_heap_total_free_in_class(t_zone_class klass)
 		return 0;
 
 	size_t total = 0;
-	ft_ll_node* head = g_heap.zls[klass];
+	t_ll_node* head = g_heap.zls[klass];
 
 	FT_LL_FOR_EACH(it, head)
 	{
@@ -215,7 +215,7 @@ size_t ft_heap_total_free_in_class(t_zone_class klass)
 }
 
 // pick the right list by class
-static inline ft_ll_node** list_for(t_zone_class k)
+static inline t_ll_node** list_for(t_zone_class k)
 {
 	return &g_heap.zls[k];
 }

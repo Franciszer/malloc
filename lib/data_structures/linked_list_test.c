@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   linked_list_test.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
+/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 17:34:54 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/22 12:50:52 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/24 19:02:38 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 
 /* Small container type embedding the intrusive node */
 typedef struct {
-	ft_ll_node node;
+	t_ll_node node;
 	int id;
 } item_t;
 
@@ -26,7 +26,7 @@ static MunitResult test_init(const MunitParameter params[], void* user_data)
 	(void)params;
 	(void)user_data;
 
-	ft_ll_node n;
+	t_ll_node n;
 	ft_ll_init(&n);
 	munit_assert_ptr_null(n.prev);
 	munit_assert_ptr_null(n.next);
@@ -39,7 +39,7 @@ static MunitResult test_push_front_single(const MunitParameter params[], void* u
 	(void)params;
 	(void)user_data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	item_t a = {.node = {0}, .id = 1};
 	ft_ll_init(&a.node);
 
@@ -61,7 +61,7 @@ static MunitResult test_push_front_multiple(const MunitParameter params[], void*
 	(void)params;
 	(void)user_data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	item_t a = {.id = 1}, b = {.id = 2}, c = {.id = 3};
 	ft_ll_init(&a.node);
 	ft_ll_init(&b.node);
@@ -88,7 +88,7 @@ static MunitResult test_push_back_order(const MunitParameter params[], void* use
 	(void)params;
 	(void)user_data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	item_t a = {.id = 1}, b = {.id = 2}, c = {.id = 3};
 	ft_ll_init(&a.node);
 	ft_ll_init(&b.node);
@@ -113,7 +113,7 @@ static MunitResult test_pop_front(const MunitParameter params[], void* user_data
 	(void)params;
 	(void)user_data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	item_t a = {.id = 1}, b = {.id = 2};
 	ft_ll_init(&a.node);
 	ft_ll_init(&b.node);
@@ -121,7 +121,7 @@ static MunitResult test_pop_front(const MunitParameter params[], void* user_data
 	ft_ll_push_back(&head, &a.node);
 	ft_ll_push_back(&head, &b.node);
 
-	ft_ll_node* n = ft_ll_pop_front(&head);
+	t_ll_node* n = ft_ll_pop_front(&head);
 	munit_assert_ptr_equal(n, &a.node);
 	munit_assert_ptr_equal(head, &b.node);
 	munit_assert_ptr_null(b.node.prev);
@@ -144,7 +144,7 @@ static MunitResult test_remove_positions(const MunitParameter params[], void* us
 	(void)params;
 	(void)user_data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	item_t a = {.id = 1}, b = {.id = 2}, c = {.id = 3}, d = {.id = 4};
 	ft_ll_init(&a.node);
 	ft_ll_init(&b.node);
@@ -196,7 +196,7 @@ static MunitResult test_iteration_and_safe_remove(const MunitParameter params[],
 	(void)params;
 	(void)user_data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	item_t n1 = {.id = 1}, n2 = {.id = 2}, n3 = {.id = 3}, n4 = {.id = 4}, n5 = {.id = 5};
 	ft_ll_init(&n1.node);
 	ft_ll_init(&n2.node);
@@ -244,7 +244,7 @@ static MunitResult test_len_empty(const MunitParameter params[], void* ud)
 {
 	(void)params;
 	(void)ud;
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 
 	size_t len = ft_ll_len(&head);
 
@@ -257,7 +257,7 @@ static MunitResult test_len_single(const MunitParameter params[], void* ud)
 {
 	(void)params;
 	(void)ud;
-	ft_ll_node *head = NULL, n1;
+	t_ll_node *head = NULL, n1;
 	ft_ll_init(&n1);
 
 	ft_ll_push_front(&head, &n1);
@@ -276,7 +276,7 @@ static MunitResult test_len_multiple_push_front(const MunitParameter params[], v
 {
 	(void)params;
 	(void)ud;
-	ft_ll_node *head = NULL, n1, n2, n3;
+	t_ll_node *head = NULL, n1, n2, n3;
 	ft_ll_init(&n1);
 	ft_ll_init(&n2);
 	ft_ll_init(&n3);
@@ -297,7 +297,7 @@ static MunitResult test_len_after_remove_and_pop(const MunitParameter params[], 
 {
 	(void)params;
 	(void)ud;
-	ft_ll_node *head = NULL, n1, n2, n3;
+	t_ll_node *head = NULL, n1, n2, n3;
 	ft_ll_init(&n1);
 	ft_ll_init(&n2);
 	ft_ll_init(&n3);
@@ -313,7 +313,7 @@ static MunitResult test_len_after_remove_and_pop(const MunitParameter params[], 
 	munit_assert_size(ft_ll_len(&head), ==, 2);
 
 	/* pop head (n3) */
-	ft_ll_node* p = ft_ll_pop_front(&head);
+	t_ll_node* p = ft_ll_pop_front(&head);
 	munit_assert_ptr_equal(p, &n3);
 	munit_assert_size(ft_ll_len(&head), ==, 1);
 
@@ -328,7 +328,7 @@ static MunitResult test_len_push_back_mixed(const MunitParameter params[], void*
 {
 	(void)params;
 	(void)ud;
-	ft_ll_node *head = NULL, a, b, c, d;
+	t_ll_node *head = NULL, a, b, c, d;
 	ft_ll_init(&a);
 	ft_ll_init(&b);
 	ft_ll_init(&c);
@@ -350,8 +350,8 @@ static MunitResult test_len_stress_many(const MunitParameter params[], void* ud)
 	(void)params;
 	(void)ud;
 	enum { N = 256 };
-	ft_ll_node* head = NULL;
-	ft_ll_node nodes[N];
+	t_ll_node* head = NULL;
+	t_ll_node nodes[N];
 
 	for (int i = 0; i < N; ++i) {
 		ft_ll_init(&nodes[i]);

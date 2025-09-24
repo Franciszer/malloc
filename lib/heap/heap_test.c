@@ -45,7 +45,7 @@ static inline int is_aligned(const void* p)
 
 static t_zone* first_zone_of(t_zone_class k)
 {
-	ft_ll_node* head = g_heap.zls[k];
+	t_ll_node* head = g_heap.zls[k];
 	if (!head)
 		return NULL;
 	return FT_CONTAINER_OF(head, t_zone, link);

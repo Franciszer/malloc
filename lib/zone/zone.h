@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:07 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 15:02:50 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/24 19:04:39 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 
 #include <stddef.h>						 /* size_t */
 #include <stdint.h>						 /* uintptr_t, uint8_t */
-#include "data_structures/linked_list.h" /* ft_ll_node */
+#include "data_structures/linked_list.h" /* t_ll_node */
 #include "helpers/helpers.h"
 
 /* Zone classes: slab for TINY/SMALL, capacity-1 for LARGE */
@@ -28,7 +28,7 @@ typedef enum t_zone_class { FT_Z_TINY, FT_Z_SMALL, FT_Z_LARGE } t_zone_class;
 /* One zone = one bin size (uniform blocks). LARGE is capacity=1. */
 typedef struct s_zone {
 	/* ---- intrusive linkage in the heap’s per-class container ---- */
-	ft_ll_node link;
+	t_ll_node link;
 
 	/* ---- identity / geometry ---- */
 	t_zone_class klass; /* FT_Z_TINY / FT_Z_SMALL / FT_Z_LARGE */
@@ -107,11 +107,11 @@ static inline size_t ft_zone_index_of(const t_zone* z, const void* p)
 }
 
 /* Recover zone pointer from intrusive list node. */
-inline struct s_zone* ft_zone_from_link(struct ft_ll_node* n)
+inline struct s_zone* ft_zone_from_link(t_ll_node* n)
 {
 	return n ? FT_CONTAINER_OF(n, struct s_zone, link) : NULL;
 }
-inline const struct s_zone* ft_zone_from_link_const(const struct ft_ll_node* n)
+inline const struct s_zone* ft_zone_from_link_const(const struct t_ll_node* n)
 {
 	return n ? FT_CONTAINER_OF_CONST(n, struct s_zone, link) : NULL;
 }

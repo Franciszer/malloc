@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   linked_list.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
+/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 16:37:04 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/22 12:23:59 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/24 19:02:16 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "linked_list.h"
 
-void ft_ll_init(ft_ll_node* n)
+void ft_ll_init(t_ll_node* n)
 {
 	if (!n)
 		return;
@@ -20,14 +20,14 @@ void ft_ll_init(ft_ll_node* n)
 	n->next = NULL;
 }
 
-int ft_ll_is_linked(const ft_ll_node* n)
+int ft_ll_is_linked(const t_ll_node* n)
 {
 	if (!n)
 		return 0;
 	return n->prev != NULL || n->next != NULL;
 }
 
-static void ft__ll_insert_before(ft_ll_node** head, ft_ll_node* pos, ft_ll_node* n)
+static void ft__ll_insert_before(t_ll_node** head, t_ll_node* pos, t_ll_node* n)
 {
 	/* Insert n before pos; if pos is NULL, insert at end (handled by caller). */
 	n->next = pos;
@@ -45,7 +45,7 @@ static void ft__ll_insert_before(ft_ll_node** head, ft_ll_node* pos, ft_ll_node*
 	}
 }
 
-void ft_ll_push_front(ft_ll_node** head, ft_ll_node* n)
+void ft_ll_push_front(t_ll_node** head, t_ll_node* n)
 {
 	if (!head || !n)
 		return;
@@ -56,7 +56,7 @@ void ft_ll_push_front(ft_ll_node** head, ft_ll_node* n)
 	*head = n;
 }
 
-void ft_ll_push_back(ft_ll_node** head, ft_ll_node* n)
+void ft_ll_push_back(t_ll_node** head, t_ll_node* n)
 {
 	if (!head || !n)
 		return;
@@ -64,7 +64,7 @@ void ft_ll_push_back(ft_ll_node** head, ft_ll_node* n)
 		ft_ll_push_front(head, n);
 		return;
 	}
-	ft_ll_node* tail = *head;
+	t_ll_node* tail = *head;
 	while (tail->next)
 		tail = tail->next;
 	/* Insert after tail */
@@ -73,11 +73,11 @@ void ft_ll_push_back(ft_ll_node** head, ft_ll_node* n)
 	tail->next = n;
 }
 
-ft_ll_node* ft_ll_pop_front(ft_ll_node** head)
+t_ll_node* ft_ll_pop_front(t_ll_node** head)
 {
 	if (!head || !*head)
 		return NULL;
-	ft_ll_node* n = *head;
+	t_ll_node* n = *head;
 	*head = n->next;
 	if (*head)
 		(*head)->prev = NULL;
@@ -85,7 +85,7 @@ ft_ll_node* ft_ll_pop_front(ft_ll_node** head)
 	return n;
 }
 
-void ft_ll_remove(ft_ll_node** head, ft_ll_node* n)
+void ft_ll_remove(t_ll_node** head, t_ll_node* n)
 {
 	if (!head || !n)
 		return;
@@ -98,7 +98,7 @@ void ft_ll_remove(ft_ll_node** head, ft_ll_node* n)
 	n->prev = n->next = NULL;
 }
 
-size_t ft_ll_len(ft_ll_node** head)
+size_t ft_ll_len(t_ll_node** head)
 {
 	if (!head || !*head)
 		return 0;

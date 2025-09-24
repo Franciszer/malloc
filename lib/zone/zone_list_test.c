@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 15:09:11 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 15:09:15 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/24 19:03:31 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ static MunitResult test_destroy_empty_list(const MunitParameter params[], void* 
 {
 	(void)params;
 	(void)data;
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	ft_zone_ll_destroy(&head);
 	munit_assert_ptr_null(head);
 	return MUNIT_OK;
@@ -40,7 +40,7 @@ static MunitResult test_destroy_mixed_list(const MunitParameter params[], void* 
 	(void)params;
 	(void)data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 
 	t_zone* a = ft_zone_new(FT_Z_TINY, ft_align_up(64, FT_ALIGN), 3);
 	t_zone* b = ft_zone_new(FT_Z_SMALL, ft_align_up(256, FT_ALIGN), 2);
@@ -65,7 +65,7 @@ static MunitResult test_first_with_space_empty(const MunitParameter params[], vo
 {
 	(void)params;
 	(void)data;
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 	munit_assert_ptr_null(ft_zone_ll_first_with_space(head));
 	return MUNIT_OK;
 }
@@ -74,7 +74,7 @@ static MunitResult test_first_with_space_skips_full(const MunitParameter params[
 {
 	(void)params;
 	(void)data;
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 
 	t_zone* z_full = ft_zone_new(FT_Z_TINY, ft_align_up(32, FT_ALIGN), 2);
 	t_zone* z_avail = ft_zone_new(FT_Z_TINY, ft_align_up(32, FT_ALIGN), 3);
@@ -111,7 +111,7 @@ static MunitResult test_first_with_space_rotation(const MunitParameter params[],
 {
 	(void)params;
 	(void)data;
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 
 	t_zone* a = ft_zone_new(FT_Z_TINY, ft_align_up(64, FT_ALIGN), 2);
 	t_zone* b = ft_zone_new(FT_Z_TINY, ft_align_up(64, FT_ALIGN), 2);
@@ -147,7 +147,7 @@ static MunitResult test_find_owner_basic(const MunitParameter params[], void* da
 	(void)params;
 	(void)data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 
 	t_zone* ztiny = ft_zone_new(FT_Z_TINY, ft_align_up(64, FT_ALIGN), 4);
 	t_zone* zsmall = ft_zone_new(FT_Z_SMALL, ft_align_up(256, FT_ALIGN), 2);
@@ -177,7 +177,7 @@ static MunitResult test_find_owner_large_and_bounds(const MunitParameter params[
 	(void)params;
 	(void)data;
 
-	ft_ll_node* head = NULL;
+	t_ll_node* head = NULL;
 
 	t_zone* zL = ft_zone_new(FT_Z_LARGE, 777, 1);
 	munit_assert_ptr_not_null(zL);

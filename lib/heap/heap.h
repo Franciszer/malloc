@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 22:32:52 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/24 14:21:31 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/24 19:05:10 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,8 +38,8 @@ extern "C" {
  * - LARGE zones are always unmapped on free.
  */
 typedef struct s_heap {
-	ft_ll_node* zls[N_ZONE_CATEGORIES]; // zone lists
-	size_t tiny_min_blocks;				/* >=100 in prod; tests may use smaller */
+	t_ll_node* zls[N_ZONE_CATEGORIES]; // zone lists
+	size_t tiny_min_blocks;			   /* >=100 in prod; tests may use smaller */
 	size_t small_min_blocks;
 } t_heap;
 
@@ -74,9 +74,9 @@ size_t ft_heap_zone_count(t_zone_class klass);
 /* Sum of free blocks across all slab zones in a class (LARGE excluded). */
 size_t ft_heap_total_free_in_class(t_zone_class klass);
 
-static inline ft_ll_node** list_for(t_zone_class k);
+static inline t_ll_node** list_for(t_zone_class k);
 
-static inline void ll_unlink(ft_ll_node** head, ft_ll_node* node);
+static inline void ll_unlink(t_ll_node** head, t_ll_node* node);
 
 #ifdef __cplusplus
 } /* extern "C" */
