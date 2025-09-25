@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   linked_list.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 16:37:04 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 19:02:16 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/25 10:27:47 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,24 +25,6 @@ int ft_ll_is_linked(const t_ll_node* n)
 	if (!n)
 		return 0;
 	return n->prev != NULL || n->next != NULL;
-}
-
-static void ft__ll_insert_before(t_ll_node** head, t_ll_node* pos, t_ll_node* n)
-{
-	/* Insert n before pos; if pos is NULL, insert at end (handled by caller). */
-	n->next = pos;
-	if (pos) {
-		n->prev = pos->prev;
-		pos->prev = n;
-	} else {
-		n->prev = NULL;
-	}
-	if (n->prev) {
-		n->prev->next = n;
-	} else {
-		/* n is new head */
-		*head = n;
-	}
 }
 
 void ft_ll_push_front(t_ll_node** head, t_ll_node* n)

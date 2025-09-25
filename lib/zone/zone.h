@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   zone.h                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:07 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 19:04:39 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/25 10:28:34 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,7 +111,7 @@ inline struct s_zone* ft_zone_from_link(t_ll_node* n)
 {
 	return n ? FT_CONTAINER_OF(n, struct s_zone, link) : NULL;
 }
-inline const struct s_zone* ft_zone_from_link_const(const struct t_ll_node* n)
+inline const struct s_zone* ft_zone_from_link_const(const t_ll_node* n)
 {
 	return n ? FT_CONTAINER_OF_CONST(n, struct s_zone, link) : NULL;
 }
