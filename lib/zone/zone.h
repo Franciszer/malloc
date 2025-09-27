@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   zone.h                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
+/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:07 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/25 10:28:34 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/25 16:24:46 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,6 +105,14 @@ static inline size_t ft_zone_index_of(const t_zone* z, const void* p)
 {
 	return (size_t)(((uintptr_t)p - (uintptr_t)z->mem_begin) / z->bin_size);
 }
+
+/* ---- show (printing) ---- */
+size_t ft_zone_print_blocks(const t_zone *z);
+/* prints one line per allocated block. 
+ * For slabs: one line per used block (bin_size bytes).
+ * For LARGE: one line with the whole payload.
+ * Returns total bytes accounted for this zone.
+ */
 
 /* Recover zone pointer from intrusive list node. */
 inline struct s_zone* ft_zone_from_link(t_ll_node* n)

@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/24 18:05:45 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/25 19:19:47 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -184,6 +184,103 @@ test unit_test: $(TEST_BINS)
 	else \
 	  for t in $(TEST_BINS); do echo "🏃 $$t"; "$$t"; done; \
 	fi
+
+# ------------------------------- integration tests (itests) --------------------
+
+# Absolute path to the shared library (used for preloading)
+ABS_TARGET := $(abspath $(TARGET))
+
+# OS-specific preload env
+ifeq ($(UNAME_S),Darwin)
+  PRELOAD_ENV := DYLD_INSERT_LIBRARIES="$(ABS_TARGET)" DYLD_FORCE_FLAT_NAMESPACE=1
+else
+  PRELOAD_ENV := LD_PRELOAD="$(ABS_TARGET)"
+endif
+
+ITEST_SRCS       := $(wildcard itests/*.c)
+ITEST_DIR        := build/itests
+ITEST_BASENAMES  := $(notdir $(ITEST_SRCS:.c=))
+ITEST_BINS_SYS   := $(patsubst itests/%.c,$(ITEST_DIR)/%.sys,$(ITEST_SRCS))
+ITEST_BINS_CUSTOM:= $(patsubst itests/%.c,$(ITEST_DIR)/%.custom,$(ITEST_SRCS))
+
+.PHONY: itest itest-strict clean-itests
+
+$(ITEST_DIR):
+	@mkdir -p $(ITEST_DIR)
+
+# System-malloc variant: compile with a compile-time tag the tests can see.
+$(ITEST_DIR)/%.sys: itests/%.c | $(ITEST_DIR)
+	$(CC) $(CFLAGS) -Ilib \
+	  -DFT_ITEST_SYSTEM_ALLOC=1 -DFT_ITEST_ALLOC_TAG=\"system\" \
+	  $< -o $@ $(LDFLAGS) $(LDLIBS)
+
+# Custom-malloc variant: also compiled with a different tag.
+$(ITEST_DIR)/%.custom: itests/%.c | $(ITEST_DIR)
+	$(CC) $(CFLAGS) -Ilib \
+	  -DFT_ITEST_SYSTEM_ALLOC=0 -DFT_ITEST_ALLOC_TAG=\"custom\" \
+	  $< -o $@ $(LDFLAGS) $(LDLIBS)
+
+# Run both variants; compare under Valgrind if present.
+itest: $(TARGET) $(ITEST_BINS_SYS) $(ITEST_BINS_CUSTOM)
+	@set -e; \
+	if [ -z "$(ITEST_SRCS)" ]; then \
+	  echo "No integration tests found (itests/*.c)."; exit 0; \
+	fi; \
+	for base in $(ITEST_BASENAMES); do \
+	  SYS="$(ITEST_DIR)/$$base.sys"; \
+	  CUS="$(ITEST_DIR)/$$base.custom"; \
+	  echo "▶︎ $$SYS (system malloc)"; \
+	  "$$SYS"; \
+	  if command -v valgrind >/dev/null 2>&1; then \
+	    echo "  ↳ valgrind (system)"; \
+	    valgrind --quiet --leak-check=full \
+	      --errors-for-leak-kinds=definite,indirect \
+	      --error-exitcode=33 "$$SYS"; \
+	  else \
+	    echo "  (valgrind not found; skipping)"; \
+	  fi; \
+	  echo "▶︎ $$CUS (custom malloc via preload)"; \
+	  env $(PRELOAD_ENV) "$$CUS"; \
+	  if command -v valgrind >/dev/null 2>&1; then \
+	    echo "  ↳ valgrind (custom)"; \
+	    env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
+	      --errors-for-leak-kinds=definite,indirect \
+	      --error-exitcode=33 "$$CUS"; \
+	  else \
+	    echo "  (valgrind not found; skipping)"; \
+	  fi; \
+	done
+
+
+# Strict mode: rebuild allocator without its destructor, then run tests.
+itest-strict: $(ITEST_BINS_SYS) $(ITEST_BINS_CUSTOM)
+	@echo "Rebuilding allocator without destructor for strict leak checks…"; \
+	$(MAKE) clean >/dev/null; \
+	$(MAKE) CFLAGS="$(CFLAGS) -DFT_HEAP_NO_DTOR" $(TARGET) >/dev/null
+	@set -e; \
+	for base in $(ITEST_BASENAMES); do \
+	  SYS="$(ITEST_DIR)/$$base.sys"; \
+	  CUS="$(ITEST_DIR)/$$base.custom"; \
+	  echo "▶︎ $$SYS (system malloc)"; \
+	  "$$SYS"; \
+	  if command -v valgrind >/dev/null 2>&1; then \
+	    echo "  ↳ valgrind (system)"; \
+	    valgrind --quiet --leak-check=full \
+	      --errors-for-leak-kinds=definite,indirect \
+	      --error-exitcode=33 "$$SYS"; \
+	  fi; \
+	  echo "▶︎ $$CUS (custom malloc via preload; no dtor)"; \
+	  env $(PRELOAD_ENV) "$$CUS"; \
+	  if command -v valgrind >/dev/null 2>&1; then \
+	    echo "  ↳ valgrind (custom; no dtor)"; \
+	    env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
+	      --errors-for-leak-kinds=definite,indirect \
+	      --error-exitcode=33 "$$CUS"; \
+	  fi; \
+	done
+
+clean-itests:
+	$(RM) -r $(ITEST_DIR)
 
 # ------------------------------- cleaning --------------------------------------
 

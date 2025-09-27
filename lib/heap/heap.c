@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/24 19:03:25 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/25 16:35:52 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,17 +20,19 @@ static inline size_t ft_bin_size_for_k(t_zone_class k);
 
 t_heap g_heap = {0};
 
-/* Constructor */
-__attribute__((constructor)) static void ft_heap_ctor(void)
-{
-	ft_heap_init(TINY_MAX, SMALL_MAX);
+#ifndef FT_HEAP_NO_CTOR
+__attribute__((constructor))
+static void ft_malloc_ctor(void) {
+    ft_heap_init(TINY_MAX, SMALL_MAX); /* or your chosen min_blocks */
 }
+#endif
 
-/* Destructor */
-__attribute__((destructor)) static void ft_heap_dtor(void)
-{
-	ft_heap_destroy();
+#ifndef FT_HEAP_NO_DTOR
+__attribute__((destructor))
+static void ft_malloc_dtor(void) {
+    ft_heap_destroy();
 }
+#endif
 
 /* Init all lists empty + set min_blocks knobs. */
 void ft_heap_init(size_t tiny_min_blocks, size_t small_min_blocks)
@@ -223,4 +225,25 @@ static inline t_ll_node** list_for(t_zone_class k)
 static inline size_t ft_bin_size_for_k(t_zone_class k)
 {
 	return (k == FT_Z_TINY) ? TINY_MAX : SMALL_MAX; // one bin per class
+}
+
+void ft_heap_show_alloc_mem(void)
+{
+    size_t grand = 0;
+
+    /* TINY */
+    if (g_heap.zls[FT_Z_TINY])
+        grand += ft_zone_ll_show_class("TINY",  g_heap.zls[FT_Z_TINY]);
+
+    /* SMALL */
+    if (g_heap.zls[FT_Z_SMALL])
+        grand += ft_zone_ll_show_class("SMALL", g_heap.zls[FT_Z_SMALL]);
+
+    /* LARGE */
+    if (g_heap.zls[FT_Z_LARGE])
+        grand += ft_zone_ll_show_class("LARGE", g_heap.zls[FT_Z_LARGE]);
+
+    ft_putstr("Total : ");
+    ft_putusize(grand);
+    ft_putstr(" bytes\n");
 }

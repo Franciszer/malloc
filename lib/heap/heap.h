@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 22:32:52 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/24 19:05:10 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/25 16:35:30 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,6 +77,8 @@ size_t ft_heap_total_free_in_class(t_zone_class klass);
 static inline t_ll_node** list_for(t_zone_class k);
 
 static inline void ll_unlink(t_ll_node** head, t_ll_node* node);
+
+void ft_heap_show_alloc_mem(void);
 
 #ifdef __cplusplus
 } /* extern "C" */

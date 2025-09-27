@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 15:09:11 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 19:03:31 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/25 16:39:34 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,28 @@
 #include "zone/zone.h"
 #include "helpers/helpers.h"
 #include "munit.h"
+
+
+/* simplistic capture */
+static char* cap_stdout(void (*fn)(void*), void *arg) {
+    int pipefd[2]; pipe(pipefd);
+    int saved = dup(1);
+    dup2(pipefd[1], 1);
+    close(pipefd[1]);
+    fn(arg);
+    close(1);
+    dup2(saved, 1);
+    close(saved);
+    char *out = NULL; size_t cap=0, len=0; char buf[512]; ssize_t n;
+    while ((n = read(pipefd[0], buf, sizeof buf)) > 0) {
+        if (len + (size_t)n + 1 > cap) { cap = cap ? cap*2 : 1024; out=(char*)realloc(out,cap); }
+        memcpy(out+len, buf, (size_t)n); len += (size_t)n;
+    }
+    if (!out) { out=(char*)malloc(1); len=0; }
+    out[len] = '\0';
+    close(pipefd[0]);
+    return out;
+}
 
 /* ---------------- destroy tests ---------------- */
 
@@ -195,6 +217,43 @@ static MunitResult test_find_owner_large_and_bounds(const MunitParameter params[
 	return MUNIT_OK;
 }
 
+
+/* reuse capture util */
+static char* cap_stdout(void (*fn)(void*), void *arg);
+static void print_class(void *arg) {
+    struct { const char *label; t_ll_node *head; } *P = arg;
+    ft_zone_ll_show_class(P->label, P->head);
+}
+
+static MunitResult test_zone_list_show_tiny(const MunitParameter[], void*)
+{
+    /* build a tiny list with 1–2 zones and a few blocks used */
+    t_zone *z1 = ft_zone_new(FT_Z_TINY, 64, 4);
+    t_zone *z2 = ft_zone_new(FT_Z_TINY, 64, 4);
+    munit_assert_not_null(z1); munit_assert_not_null(z2);
+
+    t_ll_node *head = NULL;
+    ft_ll_push_front(&head, &z1->link);
+    ft_ll_push_front(&head, &z2->link);
+
+    /* allocate one block in each */
+    munit_assert_not_null(ft_zone_alloc_block(z1));
+    munit_assert_not_null(ft_zone_alloc_block(z2));
+
+    struct { const char *label; t_ll_node *head; } P = { "TINY", head };
+    char *out = cap_stdout(print_class, &P);
+
+    /* header present and has "TINY : 0x" */
+    munit_assert_ptr_not_null(strstr(out, "TINY : 0x"));
+    /* at least one '64 bytes' line */
+    munit_assert_ptr_not_null(strstr(out, "64 bytes"));
+
+    free(out);
+    ft_zone_destroy(z1);
+    ft_zone_destroy(z2);
+    return MUNIT_OK;
+}
+
 /* ---------------- registry ---------------- */
 
 static MunitTest tests[] = {
@@ -238,7 +297,8 @@ static MunitTest tests[] = {
 	 NULL,
 	 MUNIT_TEST_OPTION_NONE,
 	 NULL},
-
+	  {"/zonelist/show/tiny", test_zone_list_show_tiny, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
 	{NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL}};
 
 static const MunitSuite suite = {"/zone_list", tests, NULL, 1, MUNIT_SUITE_OPTION_NONE};
