@@ -5,12 +5,6 @@
 
 enum { N = 2048 };
 
-static inline void maybe_show_alloc(void) {
-    if (show_alloc_mem) {
-        show_alloc_mem();
-    }
-}
-
 static size_t pick_size(unsigned seed) {
     // deterministic pseudo-random mix across classes
     unsigned r = seed * 1103515245u + 12345u;

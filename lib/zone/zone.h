@@ -107,8 +107,8 @@ static inline size_t ft_zone_index_of(const t_zone* z, const void* p)
 }
 
 /* ---- show (printing) ---- */
-size_t ft_zone_print_blocks(const t_zone *z);
-/* prints one line per allocated block. 
+size_t ft_zone_print_blocks(const t_zone* z);
+/* prints one line per allocated block.
  * For slabs: one line per used block (bin_size bytes).
  * For LARGE: one line with the whole payload.
  * Returns total bytes accounted for this zone.

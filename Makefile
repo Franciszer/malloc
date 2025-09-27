@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/25 19:19:47 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/27 19:47:25 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -187,97 +187,102 @@ test unit_test: $(TEST_BINS)
 
 # ------------------------------- integration tests (itests) --------------------
 
-# Absolute path to the shared library (used for preloading)
 ABS_TARGET := $(abspath $(TARGET))
 
-# OS-specific preload env
 ifeq ($(UNAME_S),Darwin)
   PRELOAD_ENV := DYLD_INSERT_LIBRARIES="$(ABS_TARGET)" DYLD_FORCE_FLAT_NAMESPACE=1
 else
   PRELOAD_ENV := LD_PRELOAD="$(ABS_TARGET)"
 endif
 
-ITEST_SRCS       := $(wildcard itests/*.c)
 ITEST_DIR        := build/itests
-ITEST_BASENAMES  := $(notdir $(ITEST_SRCS:.c=))
-ITEST_BINS_SYS   := $(patsubst itests/%.c,$(ITEST_DIR)/%.sys,$(ITEST_SRCS))
-ITEST_BINS_CUSTOM:= $(patsubst itests/%.c,$(ITEST_DIR)/%.custom,$(ITEST_SRCS))
+# All itests except show_tests.c (that one needs our malloc)
+ITEST_SRCS_COMMON := $(filter-out itests/show_tests.c,$(wildcard itests/*.c))
+ITEST_BASENAMES   := $(notdir $(ITEST_SRCS_COMMON:.c=))
+ITEST_BINS_SYS    := $(patsubst itests/%.c,$(ITEST_DIR)/%.sys,$(ITEST_SRCS_COMMON))
+ITEST_BINS_CUSTOM := $(patsubst itests/%.c,$(ITEST_DIR)/%.custom,$(ITEST_SRCS_COMMON))
 
-.PHONY: itest itest-strict clean-itests
+# show_alloc_mem test (custom only)
+SHOWTEST_SRC := itests/show_tests.c
+SHOWTEST_BIN := $(ITEST_DIR)/show_tests.custom
+
+.PHONY: itest showtest clean-itests
 
 $(ITEST_DIR):
 	@mkdir -p $(ITEST_DIR)
 
-# System-malloc variant: compile with a compile-time tag the tests can see.
+# System-malloc variants for common itests
 $(ITEST_DIR)/%.sys: itests/%.c | $(ITEST_DIR)
 	$(CC) $(CFLAGS) -Ilib \
 	  -DFT_ITEST_SYSTEM_ALLOC=1 -DFT_ITEST_ALLOC_TAG=\"system\" \
 	  $< -o $@ $(LDFLAGS) $(LDLIBS)
 
-# Custom-malloc variant: also compiled with a different tag.
+# Custom-malloc variants for common itests
 $(ITEST_DIR)/%.custom: itests/%.c | $(ITEST_DIR)
 	$(CC) $(CFLAGS) -Ilib \
 	  -DFT_ITEST_SYSTEM_ALLOC=0 -DFT_ITEST_ALLOC_TAG=\"custom\" \
 	  $< -o $@ $(LDFLAGS) $(LDLIBS)
 
-# Run both variants; compare under Valgrind if present.
-itest: $(TARGET) $(ITEST_BINS_SYS) $(ITEST_BINS_CUSTOM)
+# Custom-only show_alloc_mem test (links & runs only with our allocator)
+$(SHOWTEST_BIN): $(SHOWTEST_SRC) | $(ITEST_DIR)
+	$(CC) $(CFLAGS) -Ilib \
+	  -DFT_ITEST_SYSTEM_ALLOC=0 -DFT_ITEST_ALLOC_TAG=\"custom\" \
+	  $< -o $@ $(LDFLAGS) $(LDLIBS)
+
+# Run common itests both ways + the show test only with custom
+itest: $(TARGET) $(ITEST_BINS_SYS) $(ITEST_BINS_CUSTOM) $(SHOWTEST_BIN)
 	@set -e; \
-	if [ -z "$(ITEST_SRCS)" ]; then \
-	  echo "No integration tests found (itests/*.c)."; exit 0; \
+	if [ -z "$(ITEST_SRCS_COMMON)" ]; then \
+	  echo "No integration tests found (itests/*.c)."; \
+	else \
+	  for base in $(ITEST_BASENAMES); do \
+	    SYS="$(ITEST_DIR)/$$base.sys"; \
+	    CUS="$(ITEST_DIR)/$$base.custom"; \
+	    echo "▶︎ $$SYS (system malloc)"; \
+	    "$$SYS"; \
+	    if command -v valgrind >/dev/null 2>&1; then \
+	      echo "  ↳ valgrind (system)"; \
+	      valgrind --quiet --leak-check=full \
+	        --errors-for-leak-kinds=definite,indirect \
+	        --error-exitcode=33 "$$SYS"; \
+	    else \
+	      echo "  (valgrind not found; skipping)"; \
+	    fi; \
+	    echo "▶︎ $$CUS (custom malloc via preload)"; \
+	    env $(PRELOAD_ENV) "$$CUS"; \
+	    if command -v valgrind >/dev/null 2>&1; then \
+	      echo "  ↳ valgrind (custom)"; \
+	      env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
+	        --errors-for-leak-kinds=definite,indirect \
+	        --error-exitcode=33 "$$CUS"; \
+	    else \
+	      echo "  (valgrind not found; skipping)"; \
+	    fi; \
+	  done; \
 	fi; \
-	for base in $(ITEST_BASENAMES); do \
-	  SYS="$(ITEST_DIR)/$$base.sys"; \
-	  CUS="$(ITEST_DIR)/$$base.custom"; \
-	  echo "▶︎ $$SYS (system malloc)"; \
-	  "$$SYS"; \
-	  if command -v valgrind >/dev/null 2>&1; then \
-	    echo "  ↳ valgrind (system)"; \
-	    valgrind --quiet --leak-check=full \
-	      --errors-for-leak-kinds=definite,indirect \
-	      --error-exitcode=33 "$$SYS"; \
-	  else \
-	    echo "  (valgrind not found; skipping)"; \
-	  fi; \
-	  echo "▶︎ $$CUS (custom malloc via preload)"; \
-	  env $(PRELOAD_ENV) "$$CUS"; \
-	  if command -v valgrind >/dev/null 2>&1; then \
-	    echo "  ↳ valgrind (custom)"; \
-	    env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
-	      --errors-for-leak-kinds=definite,indirect \
-	      --error-exitcode=33 "$$CUS"; \
-	  else \
-	    echo "  (valgrind not found; skipping)"; \
-	  fi; \
-	done
+	echo "▶︎ $(SHOWTEST_BIN) (custom malloc via preload — show_alloc_mem)"; \
+	env $(PRELOAD_ENV) "$(SHOWTEST_BIN)"; \
+	if command -v valgrind >/dev/null 2>&1; then \
+	  echo "  ↳ valgrind (custom)"; \
+	  env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
+	    --errors-for-leak-kinds=definite,indirect \
+	    --error-exitcode=33 "$(SHOWTEST_BIN)"; \
+	else \
+	  echo "  (valgrind not found; skipping)"; \
+	fi
 
-
-# Strict mode: rebuild allocator without its destructor, then run tests.
-itest-strict: $(ITEST_BINS_SYS) $(ITEST_BINS_CUSTOM)
-	@echo "Rebuilding allocator without destructor for strict leak checks…"; \
-	$(MAKE) clean >/dev/null; \
-	$(MAKE) CFLAGS="$(CFLAGS) -DFT_HEAP_NO_DTOR" $(TARGET) >/dev/null
-	@set -e; \
-	for base in $(ITEST_BASENAMES); do \
-	  SYS="$(ITEST_DIR)/$$base.sys"; \
-	  CUS="$(ITEST_DIR)/$$base.custom"; \
-	  echo "▶︎ $$SYS (system malloc)"; \
-	  "$$SYS"; \
-	  if command -v valgrind >/dev/null 2>&1; then \
-	    echo "  ↳ valgrind (system)"; \
-	    valgrind --quiet --leak-check=full \
-	      --errors-for-leak-kinds=definite,indirect \
-	      --error-exitcode=33 "$$SYS"; \
-	  fi; \
-	  echo "▶︎ $$CUS (custom malloc via preload; no dtor)"; \
-	  env $(PRELOAD_ENV) "$$CUS"; \
-	  if command -v valgrind >/dev/null 2>&1; then \
-	    echo "  ↳ valgrind (custom; no dtor)"; \
-	    env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
-	      --errors-for-leak-kinds=definite,indirect \
-	      --error-exitcode=33 "$$CUS"; \
-	  fi; \
-	done
+# If you want to run ONLY the show_alloc_mem test:
+showtest: $(TARGET) $(SHOWTEST_BIN)
+	@echo "▶︎ $(SHOWTEST_BIN) (custom malloc via preload — show_alloc_mem)"; \
+	env $(PRELOAD_ENV) "$(SHOWTEST_BIN)"; \
+	if command -v valgrind >/dev/null 2>&1; then \
+	  echo "  ↳ valgrind (custom)"; \
+	  env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
+	    --errors-for-leak-kinds=definite,indirect \
+	    --error-exitcode=33 "$(SHOWTEST_BIN)"; \
+	else \
+	  echo "  (valgrind not found; skipping)"; \
+	fi
 
 clean-itests:
 	$(RM) -r $(ITEST_DIR)

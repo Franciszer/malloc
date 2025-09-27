@@ -227,74 +227,87 @@ static MunitResult test_free_ignores_outside_ptrs(const MunitParameter params[],
 }
 
 /* capture stdout into heap buffer; returns malloc'd string the test must free */
-static char* cap_stdout(void (*fn)(void*), void *arg) {
-    int pipefd[2]; pipe(pipefd);
-    int saved = dup(1);
-    dup2(pipefd[1], 1);
-    close(pipefd[1]);
+static char* cap_stdout(void (*fn)(void*), void* arg)
+{
+	int pipefd[2];
+	pipe(pipefd);
+	int saved = dup(1);
+	dup2(pipefd[1], 1);
+	close(pipefd[1]);
 
-    fn(arg);
+	fn(arg);
 
-    /* close write end (fd=1) to signal EOF to reader */
-    close(1);
-    dup2(saved, 1);
-    close(saved);
+	/* close write end (fd=1) to signal EOF to reader */
+	close(1);
+	dup2(saved, 1);
+	close(saved);
 
-    /* slurp */
-    char *out = NULL; size_t cap = 0, len = 0;
-    char buf[512];
-    ssize_t n;
-    while ((n = read(pipefd[0], buf, sizeof buf)) > 0) {
-        if (len + (size_t)n + 1 > cap) {
-            cap = (cap ? cap*2 : 1024);
-            out = (char*)realloc(out, cap);
-        }
-        memcpy(out + len, buf, (size_t)n);
-        len += (size_t)n;
-    }
-    if (!out) { out = (char*)malloc(1); len=0; }
-    out[len] = '\0';
-    close(pipefd[0]);
-    return out;
+	/* slurp */
+	char* out = NULL;
+	size_t cap = 0, len = 0;
+	char buf[512];
+	ssize_t n;
+	while ((n = read(pipefd[0], buf, sizeof buf)) > 0) {
+		if (len + (size_t)n + 1 > cap) {
+			cap = (cap ? cap * 2 : 1024);
+			out = (char*)realloc(out, cap);
+		}
+		memcpy(out + len, buf, (size_t)n);
+		len += (size_t)n;
+	}
+	if (!out) {
+		out = (char*)malloc(1);
+		len = 0;
+	}
+	out[len] = '\0';
+	close(pipefd[0]);
+	return out;
 }
 
 /* wrappers so we can match cap_stdout signature */
-static void print_zone_blocks(void *arg) {
-    ft_zone_print_blocks((const t_zone*)arg);
+static void print_zone_blocks(void* arg)
+{
+	ft_zone_print_blocks((const t_zone*)arg);
 }
 
-static MunitResult test_zone_print_slab(const MunitParameter[], void*){
-    /* tiny slab of bin=32, min_blocks=4 */
-    t_zone *z = ft_zone_new(FT_Z_TINY, 32, 4);
-    munit_assert_not_null(z);
+static MunitResult test_zone_print_slab(const MunitParameter[], void*)
+{
+	/* tiny slab of bin=32, min_blocks=4 */
+	t_zone* z = ft_zone_new(FT_Z_TINY, 32, 4);
+	munit_assert_not_null(z);
 
-    /* allocate two blocks */
-    void *a = ft_zone_alloc_block(z);
-    void *b = ft_zone_alloc_block(z);
-    munit_assert_not_null(a);
-    munit_assert_not_null(b);
+	/* allocate two blocks */
+	void* a = ft_zone_alloc_block(z);
+	void* b = ft_zone_alloc_block(z);
+	munit_assert_not_null(a);
+	munit_assert_not_null(b);
 
-    char *out = cap_stdout(print_zone_blocks, z);
-    /* expect two lines and "32 bytes" twice */
-    munit_assert_ptr_not_null(strstr(out, "32 bytes"));
-    /* very loose check: two occurrences */
-    const char *p = out; int cnt = 0;
-    while ((p = strstr(p, "32 bytes"))) { cnt++; p += 2; }
-    munit_assert_int(cnt, >=, 2);
+	char* out = cap_stdout(print_zone_blocks, z);
+	/* expect two lines and "32 bytes" twice */
+	munit_assert_ptr_not_null(strstr(out, "32 bytes"));
+	/* very loose check: two occurrences */
+	const char* p = out;
+	int cnt = 0;
+	while ((p = strstr(p, "32 bytes"))) {
+		cnt++;
+		p += 2;
+	}
+	munit_assert_int(cnt, >=, 2);
 
-    free(out);
-    ft_zone_destroy(z);
-    return MUNIT_OK;
+	free(out);
+	ft_zone_destroy(z);
+	return MUNIT_OK;
 }
 
-static MunitResult test_zone_print_large(const MunitParameter[], void*){
-    t_zone *z = ft_zone_new(FT_Z_LARGE, 5008, 1);
-    munit_assert_not_null(z);
-    char *out = cap_stdout(print_zone_blocks, z);
-    munit_assert_ptr_not_null(strstr(out, "5008 bytes"));
-    free(out);
-    ft_zone_destroy(z);
-    return MUNIT_OK;
+static MunitResult test_zone_print_large(const MunitParameter[], void*)
+{
+	t_zone* z = ft_zone_new(FT_Z_LARGE, 5008, 1);
+	munit_assert_not_null(z);
+	char* out = cap_stdout(print_zone_blocks, z);
+	munit_assert_ptr_not_null(strstr(out, "5008 bytes"));
+	free(out);
+	ft_zone_destroy(z);
+	return MUNIT_OK;
 }
 
 /* ---------- test registry ---------- */
@@ -332,9 +345,9 @@ static MunitTest tests[] = {
 	 NULL,
 	 MUNIT_TEST_OPTION_NONE,
 	 NULL},
-	 { "/zone/show/slab",  test_zone_print_slab,  NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/zone/show/large", test_zone_print_large, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },	
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+	{"/zone/show/slab", test_zone_print_slab, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
+	{"/zone/show/large", test_zone_print_large, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
+	{NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL},
 	{NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL}};
 
 static const MunitSuite suite = {"/zone",

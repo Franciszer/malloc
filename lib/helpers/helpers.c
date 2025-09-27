@@ -71,36 +71,53 @@ size_t ft_page_size(void)
 #endif
 }
 
-void ft_putc(char c) { (void)!write(1, &c, 1); }
-
-void ft_putstr(const char *s) {
-    if (!s) return;
-    const char *p = s;
-    while (*p) p++;
-    (void)!write(1, s, (size_t)(p - s));
+void ft_putc(char c)
+{
+	(void)!write(1, &c, 1);
 }
 
-void ft_putusize(size_t v) {
-    char buf[32];
-    size_t i = 0;
-    if (v == 0) { ft_putc('0'); return; }
-    while (v) { buf[i++] = (char)('0' + (v % 10)); v /= 10; }
-    while (i--) ft_putc(buf[i]);
+void ft_putstr(const char* s)
+{
+	if (!s)
+		return;
+	const char* p = s;
+	while (*p)
+		p++;
+	(void)!write(1, s, (size_t)(p - s));
 }
 
-void ft_puthex_ptr(const void *p) {
-    static const char hexd[] = "0123456789abcdef";
-    uintptr_t x = (uintptr_t)p;
-    ft_putstr("0x");
-    /* print without leading zeros but at least one nibble */
-    int started = 0;
-    for (int sh = (int)(sizeof(uintptr_t)*8 - 4); sh >= 0; sh -= 4) {
-        unsigned nib = (unsigned)((x >> sh) & 0xF);
-        if (!started) {
-            if (nib == 0 && sh > 0) continue;
-            started = 1;
-        }
-        ft_putc(hexd[nib]);
-    }
-    if (!started) ft_putc('0');
+void ft_putusize(size_t v)
+{
+	char buf[32];
+	size_t i = 0;
+	if (v == 0) {
+		ft_putc('0');
+		return;
+	}
+	while (v) {
+		buf[i++] = (char)('0' + (v % 10));
+		v /= 10;
+	}
+	while (i--)
+		ft_putc(buf[i]);
+}
+
+void ft_puthex_ptr(const void* p)
+{
+	static const char hexd[] = "0123456789abcdef";
+	uintptr_t x = (uintptr_t)p;
+	ft_putstr("0x");
+	/* print without leading zeros but at least one nibble */
+	int started = 0;
+	for (int sh = (int)(sizeof(uintptr_t) * 8 - 4); sh >= 0; sh -= 4) {
+		unsigned nib = (unsigned)((x >> sh) & 0xF);
+		if (!started) {
+			if (nib == 0 && sh > 0)
+				continue;
+			started = 1;
+		}
+		ft_putc(hexd[nib]);
+	}
+	if (!started)
+		ft_putc('0');
 }

@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/25 16:44:00 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/27 18:59:33 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -213,88 +213,93 @@ static size_t ft_zone_find_first_free_block(const t_zone* z)
 }
 
 /* find min base (zone pointer) in list; return NULL if empty */
-static const t_zone* find_min_zone(t_ll_node *head) {
-    const t_zone *minz = NULL;
-    FT_LL_FOR_EACH(it, head) {
-        const t_zone *z = FT_CONTAINER_OF(it, t_zone, link);
-        if (!minz || (uintptr_t)z < (uintptr_t)minz) minz = z;
-    }
-    return minz;
+static const t_zone* find_min_zone(t_ll_node* head)
+{
+	const t_zone* minz = NULL;
+	FT_LL_FOR_EACH(it, head)
+	{
+		const t_zone* z = FT_CONTAINER_OF(it, t_zone, link);
+		if (!minz || (uintptr_t)z < (uintptr_t)minz)
+			minz = z;
+	}
+	return minz;
 }
 
 /* find next zone with base > last, among those not yet printed */
-static const t_zone* find_next_zone_after(t_ll_node *head, uintptr_t last) {
-    const t_zone *best = NULL;
-    FT_LL_FOR_EACH(it, head) {
-        const t_zone *z = FT_CONTAINER_OF(it, t_zone, link);
-        uintptr_t base = (uintptr_t)z;
-        if (base > last && (!best || base < (uintptr_t)best))
-            best = z;
-    }
-    return best;
+static const t_zone* find_next_zone_after(t_ll_node* head, uintptr_t last)
+{
+	const t_zone* best = NULL;
+	FT_LL_FOR_EACH(it, head)
+	{
+		const t_zone* z = FT_CONTAINER_OF(it, t_zone, link);
+		uintptr_t base = (uintptr_t)z;
+		if (base > last && (!best || base < (uintptr_t)best))
+			best = z;
+	}
+	return best;
 }
 
-size_t ft_zone_ll_show_class(const char *label, t_ll_node *head)
+size_t ft_zone_ll_show_class(const char* label, t_ll_node* head)
 {
-    size_t total = 0;
+	size_t total = 0;
 
-    if (!head) {
-        /* nothing to print for this class; but still print an empty header? */
-        /* Subject examples always show classes that exist; here we omit empty classes */
-        return 0;
-    }
+	if (!head) {
+		/* nothing to print for this class; but still print an empty header? */
+		/* Subject examples always show classes that exist; here we omit empty classes */
+		return 0;
+	}
 
-    /* class header uses the **lowest zone base** address for this list */
-    const t_zone *first = find_min_zone(head);
-    if (!first) return 0;
+	/* class header uses the **lowest zone base** address for this list */
+	const t_zone* first = find_min_zone(head);
+	if (!first)
+		return 0;
 
-    ft_putstr(label);
-    ft_putstr(" : ");
-    ft_puthex_ptr(first);    /* zone base address (mapping start = struct address) */
-    ft_putstr("\n");
+	ft_putstr(label);
+	ft_putstr(" : ");
+	ft_puthex_ptr(first); /* zone base address (mapping start = struct address) */
+	ft_putstr("\n");
 
-    /* now print each zone in ascending base order */
-    uintptr_t last = 0;
-    const t_zone *z = NULL;
-    while ((z = find_next_zone_after(head, last))) {
-        total += ft_zone_print_blocks(z);
-        last = (uintptr_t)z;
-    }
-    return total;
+	/* now print each zone in ascending base order */
+	uintptr_t last = 0;
+	const t_zone* z = NULL;
+	while ((z = find_next_zone_after(head, last))) {
+		total += ft_zone_print_blocks(z);
+		last = (uintptr_t)z;
+	}
+	return total;
 }
 
-#include "helpers/helpers.h"
-
-size_t ft_zone_print_blocks(const t_zone *z)
+size_t ft_zone_print_blocks(const t_zone* z)
 {
-    if (!z) return 0;
+	if (!z)
+		return 0;
 
-    size_t total = 0;
+	size_t total = 0;
 
-    if (z->klass == FT_Z_LARGE) {
-        /* one big payload */
-        ft_puthex_ptr(z->mem_begin);
-        ft_putstr(" - ");
-        ft_puthex_ptr(z->mem_end);
-        ft_putstr(" : ");
-        ft_putusize(z->bin_size);
-        ft_putstr(" bytes\n");
-        return z->bin_size;
-    }
+	if (z->klass == FT_Z_LARGE) {
+		/* one big payload */
+		ft_puthex_ptr(z->mem_begin);
+		ft_putstr(" - ");
+		ft_puthex_ptr(z->mem_end);
+		ft_putstr(" : ");
+		ft_putusize(z->bin_size);
+		ft_putstr(" bytes\n");
+		return z->bin_size;
+	}
 
-    /* slab: print each used block */
-    for (size_t i = 0; i < z->capacity; ++i) {
-        if (z->occ[i] == FT_OCC_USED) {
-            void *beg = (void*)((char*)z->mem_begin + i * z->bin_size);
-            void *end = (void*)((char*)beg + z->bin_size);
-            ft_puthex_ptr(beg);
-            ft_putstr(" - ");
-            ft_puthex_ptr(end);
-            ft_putstr(" : ");
-            ft_putusize(z->bin_size);
-            ft_putstr(" bytes\n");
-            total += z->bin_size;
-        }
-    }
-    return total;
+	/* slab: print each used block */
+	for (size_t i = 0; i < z->capacity; ++i) {
+		if (z->occ[i] == FT_OCC_USED) {
+			void* beg = (void*)((char*)z->mem_begin + i * z->bin_size);
+			void* end = (void*)((char*)beg + z->bin_size);
+			ft_puthex_ptr(beg);
+			ft_putstr(" - ");
+			ft_puthex_ptr(end);
+			ft_putstr(" : ");
+			ft_putusize(z->bin_size);
+			ft_putstr(" bytes\n");
+			total += z->bin_size;
+		}
+	}
+	return total;
 }

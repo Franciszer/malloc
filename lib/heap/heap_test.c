@@ -51,66 +51,82 @@ static t_zone* first_zone_of(t_zone_class k)
 	return FT_CONTAINER_OF(head, t_zone, link);
 }
 
-static char* cap_stdout(void (*fn)(void*), void *arg) {
-    int pipefd[2]; pipe(pipefd);
-    int saved = dup(1);
-    dup2(pipefd[1], 1);
-    close(pipefd[1]);
-    fn(arg);
-    close(1);
-    dup2(saved, 1);
-    close(saved);
-    char *out = NULL; size_t cap=0, len=0; char buf[512]; ssize_t n;
-    while ((n = read(pipefd[0], buf, sizeof buf)) > 0) {
-        if (len + (size_t)n + 1 > cap) { cap = cap ? cap*2 : 1024; out=(char*)realloc(out,cap); }
-        memcpy(out+len, buf, (size_t)n); len += (size_t)n;
-    }
-    if (!out) { out=(char*)malloc(1); len=0; }
-    out[len] = '\0';
-    close(pipefd[0]);
-    return out;
+static char* cap_stdout(void (*fn)(void*), void* arg)
+{
+	int pipefd[2];
+	pipe(pipefd);
+	int saved = dup(1);
+	dup2(pipefd[1], 1);
+	close(pipefd[1]);
+	fn(arg);
+	close(1);
+	dup2(saved, 1);
+	close(saved);
+	char* out = NULL;
+	size_t cap = 0, len = 0;
+	char buf[512];
+	ssize_t n;
+	while ((n = read(pipefd[0], buf, sizeof buf)) > 0) {
+		if (len + (size_t)n + 1 > cap) {
+			cap = cap ? cap * 2 : 1024;
+			out = (char*)realloc(out, cap);
+		}
+		memcpy(out + len, buf, (size_t)n);
+		len += (size_t)n;
+	}
+	if (!out) {
+		out = (char*)malloc(1);
+		len = 0;
+	}
+	out[len] = '\0';
+	close(pipefd[0]);
+	return out;
 }
 
 /* ---------- tests ---------- */
 
-static char* cap_stdout(void (*fn)(void*), void *arg);
-static void run_show(void *arg) { (void)arg; ft_heap_show_alloc_mem(); }
+static char* cap_stdout(void (*fn)(void*), void* arg);
+static void run_show(void* arg)
+{
+	(void)arg;
+	ft_heap_show_alloc_mem();
+}
 
 static MunitResult test_heap_show_total(const MunitParameter[], void*)
 {
-    ft_heap_init(8, 8); /* tiny/small min blocks small for tests */
+	ft_heap_init(8, 8); /* tiny/small min blocks small for tests */
 
-    /* TINY: 2 allocs of bin=TINY_MAX */
-    void *ta = ft_heap_malloc(1);
-    void *tb = ft_heap_malloc(1);
-    munit_assert_not_null(ta);
-    munit_assert_not_null(tb);
+	/* TINY: 2 allocs of bin=TINY_MAX */
+	void* ta = ft_heap_malloc(1);
+	void* tb = ft_heap_malloc(1);
+	munit_assert_not_null(ta);
+	munit_assert_not_null(tb);
 
-    /* SMALL: 1 alloc in small range */
-    void *sa = ft_heap_malloc((size_t)(TINY_MAX+1));
-    munit_assert_not_null(sa);
+	/* SMALL: 1 alloc in small range */
+	void* sa = ft_heap_malloc((size_t)(TINY_MAX + 1));
+	munit_assert_not_null(sa);
 
-    /* LARGE: 1 large alloc */
-    void *la = ft_heap_malloc((size_t)(SMALL_MAX+10));
-    munit_assert_not_null(la);
+	/* LARGE: 1 large alloc */
+	void* la = ft_heap_malloc((size_t)(SMALL_MAX + 10));
+	munit_assert_not_null(la);
 
-    char *out = cap_stdout(run_show, NULL);
+	char* out = cap_stdout(run_show, NULL);
 
-    /* Must mention headers */
-    munit_assert_ptr_not_null(strstr(out, "TINY : 0x"));
-    munit_assert_ptr_not_null(strstr(out, "SMALL : 0x"));
-    munit_assert_ptr_not_null(strstr(out, "LARGE : 0x"));
-    munit_assert_ptr_not_null(strstr(out, "Total : "));
+	/* Must mention headers */
+	munit_assert_ptr_not_null(strstr(out, "TINY : 0x"));
+	munit_assert_ptr_not_null(strstr(out, "SMALL : 0x"));
+	munit_assert_ptr_not_null(strstr(out, "LARGE : 0x"));
+	munit_assert_ptr_not_null(strstr(out, "Total : "));
 
-    free(out);
+	free(out);
 
-    /* tear down */
-    ft_heap_free(ta);
-    ft_heap_free(tb);
-    ft_heap_free(sa);
-    ft_heap_free(la);
-    ft_heap_destroy();
-    return MUNIT_OK;
+	/* tear down */
+	ft_heap_free(ta);
+	ft_heap_free(tb);
+	ft_heap_free(sa);
+	ft_heap_free(la);
+	ft_heap_destroy();
+	return MUNIT_OK;
 }
 
 static MunitResult tiny_alloc_free_basic(const MunitParameter params[], void* fixture)

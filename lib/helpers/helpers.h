@@ -13,8 +13,8 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
-   #include <stddef.h> // size_t
-   #include <unistd.h>
+#include <stddef.h> // size_t
+#include <unistd.h>
 #include <inttypes.h>
 /* Alignment for returned payloads and internal pointers (heap & zone agree) */
 #define FT_ALIGN 16
@@ -45,8 +45,8 @@ size_t ft_align_up(size_t n, size_t a);
 
 /* printing helpers (stdout, no stdio) */
 void ft_putc(char c);
-void ft_putstr(const char *s);
-void ft_putusize(size_t v);      /* decimal */
-void ft_puthex_ptr(const void *p); /* prints like 0x1a2b3c */
+void ft_putstr(const char* s);
+void ft_putusize(size_t v);		   /* decimal */
+void ft_puthex_ptr(const void* p); /* prints like 0x1a2b3c */
 
 #endif /* HELPERS_H */

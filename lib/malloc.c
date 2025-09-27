@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/20 16:17:02 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 18:02:05 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/27 19:34:55 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ void* realloc(void* ptr, size_t size)
 	return np;
 }
 
-void show_alloc_mem()
+void show_alloc_mem(void)
 {
-	// TODO!
+    ft_heap_show_alloc_mem();
 }
