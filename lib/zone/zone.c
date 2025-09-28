@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/28 02:53:15 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 00:15:35 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@
 
 // static declarations
 
-static size_t ft_zone_find_first_free_block(const t_zone* z);
+static size_t ft_zone_find_first_free_block(t_zone* z);
 static t_zone* ft_zone_make_large(size_t hdr, size_t ps, size_t need);
 static t_zone*
 ft_zone_make_slab(t_zone_class klass, size_t hdr, size_t ps, size_t bsz, size_t min_blocks);
@@ -118,18 +118,25 @@ ft_zone_make_slab(t_zone_class klass, size_t hdr, size_t ps, size_t bsz, size_t 
 	z->bin_size = bsz;
 	z->capacity = cap;
 	z->free_count = cap;
+	z->next_free_hint = 0;
 
+	
 	z->mem_begin = (void*)((uintptr_t)z + hdr);
 	z->mem_end = (void*)((uintptr_t)z->mem_begin + pay_bytes);
+	ft_putstr("SLAB ");
+	ft_putstr(klass == FT_Z_TINY ? "TINY" : "SMALL");
+	ft_putstr(": bin=");
+	ft_putusize(bsz);
+	ft_putstr(" cap=");
+	ft_putusize(cap);
+	ft_putstr(" map=");
+	ft_putusize(ft_zone_mapped_bytes(z));
+	ft_putstr(" bytes\n");
 
 	// occ[] sits right after payload; length == capacity
 	z->occ = (uint8_t*)z->mem_end;
 
 	z->map_end = (void*)((uintptr_t)z + total);
-
-	// If FT_OCC_FREE == 0 (recommended), mmap zero-fill means occ[] is already “all free”.
-	// If you use FT_OCC_FREE == 1, initialize here:
-	// for (size_t i = 0; i < cap; ++i) z->occ[i] = FT_OCC_FREE;
 
 	return z;
 }
@@ -175,6 +182,7 @@ void ft_zone_free_block(t_zone* z, void* p)
 	if (z->occ[idx] == FT_OCC_USED) {
 		z->occ[idx] = FT_OCC_FREE;
 		z->free_count++;
+		if (idx < z->next_free_hint) z->next_free_hint = idx;
 	}
 }
 /* ---------------- helpers ---------------- */
@@ -202,14 +210,22 @@ int ft_zone_has_space(const t_zone* z)
 
 // returns index of free block
 // FT_MALLOC_ERR_SLAB_INDEX if none
-static size_t ft_zone_find_first_free_block(const t_zone* z)
+/* drop the const: we update the hint */
+static size_t ft_zone_find_first_free_block(t_zone *z)
 {
-	for (size_t i = 0; i < z->capacity; i++) {
-		if (z->occ[i] == FT_OCC_FREE)
-			return i;
-	}
+    if (!z || z->capacity == 0) return FT_MALLOC_ERR_SLAB_INDEX(z);
 
-	return FT_MALLOC_ERR_SLAB_INDEX(z);
+    size_t i = z->next_free_hint;
+    for (size_t seen = 0; seen < z->capacity; ++seen) {
+        if (z->occ[i] == FT_OCC_FREE) {
+            /* advance hint for next call */
+            z->next_free_hint = (i + 1 == z->capacity) ? 0 : i + 1;
+            return i;
+        }
+        /* ++i with explicit wrap avoids any addition overflow concerns */
+        if (++i == z->capacity) i = 0;
+    }
+    return FT_MALLOC_ERR_SLAB_INDEX(z);
 }
 
 /* find min base (zone pointer) in list; return NULL if empty */
@@ -272,6 +288,10 @@ size_t ft_zone_ll_show_class(const char* label, t_ll_node* head)
 size_t ft_zone_print_blocks(const t_zone* z)
 {
     if (!z) return 0;
+
+	if (z->klass != FT_Z_LARGE && z->free_count == z->capacity) {
+        return 0;
+    }
 
     size_t total = 0;
 

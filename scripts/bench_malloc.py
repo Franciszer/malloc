@@ -23,7 +23,7 @@ def parse_time_v(stderr_text):
         if head.startswith('/') or head.startswith('./'):
             continue
         # split on the LAST colon, since some keys contain colons in the text
-        key, val = line.rsplit(':', 1)
+        key, val = line.split(':', 1)
         metrics[key.strip()] = val.strip()
     return metrics
 

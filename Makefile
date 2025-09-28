@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/28 18:53:05 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/29 00:16:49 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -189,18 +189,15 @@ BENCH_BINS            := $(patsubst $(BENCH_SRC_DIR)/%.c,$(BENCH_BIN_DIR)/%,$(BE
 
 .PHONY: bench_tests
 bench_tests: libft_malloc_build $(BENCH_BIN_DIR) $(BENCH_BINS) $(BENCH_RUNNER) $(BENCH_SCRIPT)
-	@if [ -z "$(BENCH_BINS)" ]; then \
-	  echo "❌ No subject tests found in $(BENCH_SRC_DIR). Add test0.c … test5.c there."; \
-	  exit 1; \
-	fi
+	@ln -sf libft_malloc_$(HOSTTYPE).so libft_malloc.so || true
+	@rm -f $(BENCH_OUT_CSV)
 	@chmod +x $(BENCH_RUNNER)
-	@echo "➡️  Running: $(BENCH_BINS)"
 	$(BENCH_PYTHON) $(BENCH_SCRIPT) \
 	  --time "$(BENCH_TIME)" \
 	  --runner-custom "$(BENCH_RUNNER)" \
 	  --out "$(BENCH_OUT_CSV)" \
 	  $(BENCH_BINS)
-	@echo "✅ Wrote $(BENCH_OUT_CSV)"
+	@echo "Wrote $(BENCH_OUT_CSV)"
 
 .PHONY: bench_tests_quick
 bench_tests_quick: libft_malloc_build $(BENCH_BIN_DIR) $(BENCH_RUNNER) $(BENCH_SCRIPT)
@@ -242,6 +239,7 @@ $(BENCH_BIN_DIR)/test5: $(BENCH_SRC_DIR)/test5.c | $(BENCH_BIN_DIR)
 	$(BENCH_CC) $(BENCH_CFLAGS) -o $@ $< -L. -lft_malloc
 
 .PHONY: bench_tests_clean
+
 bench_tests_clean:
 	@rm -f $(BENCH_BIN_DIR)/test0 $(BENCH_BIN_DIR)/test1 $(BENCH_BIN_DIR)/test2 \
 	        $(BENCH_BIN_DIR)/test3 $(BENCH_BIN_DIR)/test4 $(BENCH_BIN_DIR)/test5 \

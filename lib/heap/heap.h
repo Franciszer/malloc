@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 22:32:52 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/28 02:56:26 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 23:01:57 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,11 +23,11 @@
 extern "C" {
 #endif
 
-#define TINY_MAX 128
-#define SMALL_MAX 4096
+#define TINY_N_BLOCKS 128
+#define SMALL_N_BLOCKS 128
 
 #define TINY_BIN_SIZE 128
-#define SMALL_BIN_SIZE 128
+#define SMALL_BIN_SIZE 4096
 
 #define N_ZONE_CATEGORIES 3
 
@@ -37,11 +37,16 @@ extern "C" {
  * - large : capacity-1 zones
  */
 typedef struct s_heap {
-	t_ll_node* zls[N_ZONE_CATEGORIES]; // zone lists
-	size_t tiny_min_blocks;			   /* >=100 in prod; tests may use smaller */
-	size_t small_min_blocks;
-} t_heap;
+    t_ll_node* zls[N_ZONE_CATEGORIES];
 
+    // NEW: bin sizes (one bin per class)
+    size_t tiny_bin_size;    // e.g. 128
+    size_t small_bin_size;   // e.g. 4096
+
+    // Number of blocks to pre-allocate in a slab (counts, not bytes)
+    size_t tiny_min_blocks;  // e.g. 100
+    size_t small_min_blocks; // e.g. 100
+} t_heap;
 /* Global heap state (define in heap.c) */
 extern t_heap g_heap;
 

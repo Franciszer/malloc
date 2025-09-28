@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:16:46 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/28 01:24:46 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 23:24:02 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,9 +54,14 @@ void* ft_memcpy(void* dst, const void* src, size_t n)
 
 /* ---------------- alignment & pagesize ---------------- */
 
-size_t ft_align_up(size_t n, size_t a)
-{
-	return (n + (a - 1)) & ~(a - 1);
+size_t ft_align_up(size_t x, size_t align) {
+    if (align == 0) return x;
+    size_t r = x % align;
+    if (r == 0) return x;
+    size_t add = align - r;
+    // overflow guard
+    if (x > SIZE_MAX - add) return SIZE_MAX;
+    return x + add;
 }
 
 size_t ft_page_size(void)
