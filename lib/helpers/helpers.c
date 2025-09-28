@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:16:46 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/25 16:41:53 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 01:24:46 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,4 +120,21 @@ void ft_puthex_ptr(const void* p)
 	}
 	if (!started)
 		ft_putc('0');
+}
+
+void dbg_puts(const char *s) {
+    if (!s) return;
+    const char *p = s;
+    while (*p) p++;
+    /* write to STDERR; no buffering, no malloc */
+    (void)write(2, s, (size_t)(p - s));
+}
+
+void dbg_zu(size_t v) {
+    char buf[32];
+    int i = (int)sizeof(buf);
+    buf[--i] = '\n';
+    if (v == 0) buf[--i] = '0';
+    while (v) { buf[--i] = (char)('0' + (v % 10)); v /= 10; }
+    (void)write(2, buf + i, (size_t)(sizeof(buf) - i));
 }

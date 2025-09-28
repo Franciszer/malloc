@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 22:32:52 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/27 19:36:02 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/27 22:27:42 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,10 +32,6 @@ extern "C" {
  * - tiny  : slab zones (various bin sizes)
  * - small : slab zones (various bin sizes)
  * - large : capacity-1 zones
- *
- * v1 policy:
- * - Do NOT auto-destroy empty slab zones (keep them in the lists).
- * - LARGE zones are always unmapped on free.
  */
 typedef struct s_heap {
 	t_ll_node* zls[N_ZONE_CATEGORIES]; // zone lists
@@ -48,14 +44,13 @@ extern t_heap g_heap;
 
 /* Init all lists empty + set min_blocks knobs. */
 void ft_heap_init(size_t tiny_min_blocks, size_t small_min_blocks);
+
 /* Unmap every zone in tiny/small/large and reset to init state. */
 void ft_heap_destroy(void);
 
 /* Allocator entry points (used by tests and wired by your malloc.c) */
 void* ft_heap_malloc(size_t n);
-
 void ft_heap_free(void* p);
-/* Optional for later: */
 void* ft_heap_realloc(void* p, size_t n);
 
 /* ---- helpers (tested) ---- */
@@ -78,7 +73,7 @@ static inline t_ll_node** list_for(t_zone_class k);
 
 static inline void ll_unlink(t_ll_node** head, t_ll_node* node);
 
-size_t eap_show_alloc_mem(void);
+size_t ft_heap_show_alloc_mem(void);
 
 #ifdef __cplusplus
 } /* extern "C" */

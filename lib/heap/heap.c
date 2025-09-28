@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/27 19:34:28 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 02:11:59 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,17 +52,21 @@ void ft_heap_destroy(void)
 	g_heap.tiny_min_blocks = 0;
 	g_heap.small_min_blocks = 0;
 }
-
+#include "helpers/helpers.h"
 /* Allocator entry points (used by tests and wired by your malloc.c) */
 void* ft_heap_malloc(size_t n)
 {
 	// 1) normalize & align
 	size_t need = ft_align_up(n ? n : 1, FT_ALIGN);
 
+	dbg_puts("need: ");
+	dbg_zu(need);
+	dbg_puts("\n");
 	// 2) classify
 	t_zone_class k = ft_heap_classify(need);
-	t_ll_node** head = list_for(k);
 
+	t_ll_node** head = list_for(k);
+ 
 	// 3) LARGE → one mapping per allocation
 	if (k == FT_Z_LARGE) {
 		t_zone* z = t_zone_new_large(need); // inline wrapper to ft_zone_new
@@ -175,11 +179,13 @@ void* ft_heap_realloc(void* p, size_t n)
 
 /* Classify request into TINY/SMALL/LARGE.
  */
-t_zone_class ft_heap_classify(size_t n)
-{
-	n = n ? n : 1;
-	return (n <= TINY_MAX) ? FT_Z_TINY : (n <= SMALL_MAX) ? FT_Z_SMALL : FT_Z_LARGE;
+t_zone_class ft_heap_classify(size_t n) {
+    if (n == 0) n = 1;
+    if (n <= TINY_MAX)  return FT_Z_TINY;
+    if (n <= SMALL_MAX) return FT_Z_SMALL;
+    return FT_Z_LARGE;
 }
+
 
 t_zone* ft_heap_find_owner(const void* p)
 {
@@ -219,7 +225,7 @@ size_t ft_heap_total_free_in_class(t_zone_class klass)
 // pick the right list by class
 static inline t_ll_node** list_for(t_zone_class k)
 {
-	return &g_heap.zls[k];
+	return &g_heap.zls[(int)k];
 }
 
 static inline size_t ft_bin_size_for_k(t_zone_class k)

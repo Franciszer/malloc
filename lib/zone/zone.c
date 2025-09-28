@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/27 18:59:33 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 02:11:01 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,8 +204,11 @@ int ft_zone_has_space(const t_zone* z)
 // FT_MALLOC_ERR_SLAB_INDEX if none
 static size_t ft_zone_find_first_free_block(const t_zone* z)
 {
+	dbg_puts("ft_zone_find_first_free_block: ");
+	dbg_zu((size_t)z);
+	dbg_puts("\n");
 	for (size_t i = 0; i < z->capacity; i++) {
-		if (!z->occ[i])
+		if (z->occ[i] == FT_OCC_FREE)
 			return i;
 	}
 
@@ -271,35 +274,36 @@ size_t ft_zone_ll_show_class(const char* label, t_ll_node* head)
 
 size_t ft_zone_print_blocks(const t_zone* z)
 {
-	if (!z)
-		return 0;
+    if (!z) return 0;
 
-	size_t total = 0;
+    size_t total = 0;
 
-	if (z->klass == FT_Z_LARGE) {
-		/* one big payload */
-		ft_puthex_ptr(z->mem_begin);
-		ft_putstr(" - ");
-		ft_puthex_ptr(z->mem_end);
-		ft_putstr(" : ");
-		ft_putusize(z->bin_size);
-		ft_putstr(" bytes\n");
-		return z->bin_size;
-	}
+    if (z->klass == FT_Z_LARGE) {
+        /* one big payload */
+        void *beg = z->mem_begin;
+        void *end = (void *)((char*)beg + z->bin_size); /* or z->mem_end */
+        ft_puthex_ptr(beg);
+        ft_putstr(" - ");
+        ft_puthex_ptr(end);
+        ft_putstr(" : ");
+        ft_putusize(z->bin_size);
+        ft_putstr(" bytes\n");
+        return z->bin_size;
+    }
 
-	/* slab: print each used block */
-	for (size_t i = 0; i < z->capacity; ++i) {
-		if (z->occ[i] == FT_OCC_USED) {
-			void* beg = (void*)((char*)z->mem_begin + i * z->bin_size);
-			void* end = (void*)((char*)beg + z->bin_size);
-			ft_puthex_ptr(beg);
-			ft_putstr(" - ");
-			ft_puthex_ptr(end);
-			ft_putstr(" : ");
-			ft_putusize(z->bin_size);
-			ft_putstr(" bytes\n");
-			total += z->bin_size;
-		}
-	}
-	return total;
+    /* slab: print each used block */
+    for (size_t i = 0; i < z->capacity; ++i) {
+        if (z->occ[i] == FT_OCC_USED) {
+            void *beg = (void *)((char*)z->mem_begin + i * z->bin_size);
+            void *end = (void *)((char*)beg + z->bin_size);
+            ft_puthex_ptr(beg);
+            ft_putstr(" - ");
+            ft_puthex_ptr(end);
+            ft_putstr(" : ");
+            ft_putusize(z->bin_size);
+            ft_putstr(" bytes\n");
+            total += z->bin_size;
+        }
+    }
+    return total;
 }

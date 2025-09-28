@@ -6,11 +6,14 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/20 16:17:02 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/27 19:34:55 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 02:16:39 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "malloc.h"
+
+#include <errno.h>
+#include "heap/heap.h"
 
 /* Public API just forwards to heap. These must be exported symbols. */
 void free(void* ptr)
@@ -20,6 +23,7 @@ void free(void* ptr)
 
 void* malloc(size_t size)
 {
+	dbg_puts("HELLO MALLOC");
 	void* p = ft_heap_malloc(size);
 	if (!p && size)
 		errno = ENOMEM;

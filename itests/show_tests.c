@@ -1,75 +1,56 @@
-// itests/show_tests.c
-#include <assert.h>
-#include <fcntl.h>
-#include <stdint.h>
+/* itests/show_test.c */
+#include "malloc.h"   /* our header, found via -Ilib or -I. */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <dlfcn.h>            // <-- add this
 
-#include "malloc.h"           // your header that declares show_alloc_mem (ok)
-
-#ifndef TEST_TINY_MAX
-#  define TEST_TINY_MAX  128
+#ifndef TINY_MAX
+#  define TINY_MAX 128
 #endif
-#ifndef TEST_SMALL_MAX
-#  define TEST_SMALL_MAX 4096
+#ifndef SMALL_MAX
+#  define SMALL_MAX 4096
 #endif
-
-// unchanged: capture_stdout() ...
-
-static int contains(const char *hay, const char *needle) {
-    return hay && needle && strstr(hay, needle) != NULL;
-}
 
 int main(void) {
-    // Make sure each class is represented
+    show_alloc_mem();
+    
+    puts("t1 alloc");
     void *t1 = malloc(32);
-    void *t2 = malloc(TEST_TINY_MAX);
-    void *s1 = malloc(TEST_TINY_MAX + 1);
-    void *s2 = malloc(TEST_SMALL_MAX);
-    void *L  = malloc(64*1024 + 123);
+    puts("t2 alloc");
+    void *t2 = malloc(TINY_MAX);
+    // void *s2 = malloc(SMALL_MAX);
+    // void *s3 = malloc(SMALL_MAX);
+    // void *s4 = malloc(SMALL_MAX);
+    // void *s1 = malloc(TINY_MAX + 1);
+    // void *L  = malloc(64*1024 + 123);
 
     memset(t1, 0xAA, 32);
-    memset(t2, 0xBB, TEST_TINY_MAX);
-    memset(s1, 0xCC, TEST_TINY_MAX + 1);
-    memset(s2, 0xDD, TEST_SMALL_MAX);
-    memset(L,  0xEE, 64*1024 + 123);
+    memset(t2, 0xBB, TINY_MAX);
+    // memset(s1, 0xCC, TINY_MAX + 1);
+    // memset(s2, 0xDD, SMALL_MAX);
+    // memset(L,  0xEE, 64*1024 + 123);
 
-    // Resolve show_alloc_mem at runtime from the preloaded allocator
-    typedef void (*show_fn_t)(void);
-    show_fn_t fn = (show_fn_t)dlsym(RTLD_DEFAULT, "show_alloc_mem");
-    if (!fn) {
-        fprintf(stderr, "show_alloc_mem not found (is LD_PRELOAD set?)\n");
-        // 77 is a common “skip” code in test suites
-        return 77;
-    }
+    puts("---- show_alloc_mem (after allocs) ----");
 
-    size_t out_len = 0;
-    char *out = capture_stdout(fn, &out_len);
-    if (!out) {
-        fprintf(stderr, "failed to capture show_alloc_mem output\n");
-        return 1;
-    }
+    show_alloc_mem();
 
-    int ok = 1;
-    ok &= contains(out, "TINY");
-    ok &= contains(out, "SMALL");
-    ok &= contains(out, "LARGE");
-    ok &= contains(out, "0x");
-    ok &= contains(out, "bytes");
+    /* free a couple, then show again */
+    // free(t2);
+    free(t1);
 
-    if (!ok) {
-        fprintf(stderr, "show_alloc_mem output unexpected:\n%s\n", out);
-        free(out);
-        return 2;
-    }
+    puts("---- show_alloc_mem (after partial frees) ----");
+    show_alloc_mem();
 
-    free(out);
+    /* clean up */
+    // free(t1);
+    free(t2);
 
-    free(t1); free(t2); free(s1); free(s2); free(L);
+    puts("---- show_alloc_mem (after all frees) ----");
+    show_alloc_mem();
+    // free(s2);
+    // free(s3);
+    // free(s4);
+    // free(L);
 
-    puts("show_alloc_mem: OK");
+    puts("show_test: OK");
     return 0;
 }

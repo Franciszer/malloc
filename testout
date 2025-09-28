@@ -1,0 +1,13 @@
+▶︎ build/itests/churn_mix.custom (custom malloc via LD_PRELOAD)
+▶︎ build/itests/large_basic.custom (custom malloc via LD_PRELOAD)
+▶︎ build/itests/show_tests.custom (custom malloc via LD_PRELOAD)
+SMALL : 0x73cf217fe050
+0x73cf217fe050 - 0x73cf217ff050 : 4096 bytes
+Total : 4096 bytes
+SMALL : 0x73cf217fe050
+0x73cf217fe050 - 0x73cf217ff050 : 4096 bytes
+Total : 4096 bytes
+▶︎ build/itests/small_basic.custom (custom malloc via LD_PRELOAD)
+▶︎ build/itests/smoke.custom (custom malloc via LD_PRELOAD)
+▶︎ build/itests/stress_many.custom (custom malloc via LD_PRELOAD)
+▶︎ build/itests/tiny_basic.custom (custom malloc via LD_PRELOAD)

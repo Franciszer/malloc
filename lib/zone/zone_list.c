@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 14:16:35 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/27 19:22:48 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 02:12:25 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ size_t ft_zone_ll_print_sorted(const char* label, t_ll_node* head)
 
 	for (size_t i = 0; i < nz; ++i) {
 		t_zone* z = min_zone_after(head, last);
-		if (!z)
+ 		if (!z)
 			break;
 
 		/* header line for this zone */
@@ -85,6 +85,12 @@ size_t ft_zone_ll_print_sorted(const char* label, t_ll_node* head)
 		}
 		ft_puthex_ptr(z->mem_begin);
 		ft_putstr("\n");
+
+		// in ft_zone_ll_print_sorted, right before ft_zone_print_blocks(z)
+		ft_putstr("  [cap="); ft_putusize(z->capacity);
+		ft_putstr(" free=");  ft_putusize(z->free_count);
+		ft_putstr(" bin=");   ft_putusize(z->bin_size);
+		ft_putstr("]\n");
 
 		/* zone-level printing (your function) */
 		total += ft_zone_print_blocks(z);

@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/27 19:47:25 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/28 02:45:48 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,26 +14,11 @@
 # Builds a shared library: libft_malloc_$(HOSTTYPE).so
 # Creates a symlink:      libft_malloc.so -> libft_malloc_$(HOSTTYPE).so
 # Objects & deps mirrored under build/ (e.g., lib/x/y.c -> build/x/y.o, build/x/y.d)
-# Knobs:
-#   DEBUG=1   -> add -g -O0 -DDEBUG
-#   SAN=1     -> add sanitizers (intended for unit-test binaries; may conflict with interposed malloc)
-#   EXPORTS=0 -> disable symbol export lists (by default exports are enabled)
-#   NO_VIS=1  -> disable -fvisibility=hidden
 
 # ------------------------------- host & toolchain -------------------------------
 
 CC       ?= cc
 UNAME_S   := $(shell uname -s)
-
-ifeq ($(UNAME_S),Linux)
-  # glibc: expose “misc/GNU” APIs (MAP_ANONYMOUS, etc.)
-  CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE
-endif
-
-ifeq ($(UNAME_S),Darwin)
-  # Darwin/BSD: expose full C/POSIX/BSD surface (MAP_ANON, etc.)
-  CFLAGS += -D_DARWIN_C_SOURCE
-endif
 
 # Subject requirement: define HOSTTYPE if empty
 ifeq ($(HOSTTYPE),)
@@ -71,57 +56,33 @@ THIRD_PARTY_OBJS := $(patsubst %.c,build/%.o,$(THIRD_PARTY_SRCS))
 
 # ------------------------------- flags -----------------------------------------
 
-CFLAGS   ?= -O2
-CFLAGS   += -std=c11 -fPIC -Wall -Wextra -Ilib -MMD -MP
-LDFLAGS  ?=
-LDLIBS   ?=
 
-# Optional visibility control
-ifeq ($(NO_VIS),)
-CFLAGS   += -fvisibility=hidden
+CFLAGS := -std=c11 -fPIC -Wall -Wextra -Ilib -MMD -MP
+LDFLAGS ?=
+LDLIBS  ?=
+
+ifeq ($(UNAME_S),Linux)
+  CFLAGS += -D_DEFAULT_SOURCE -D_GNU_SOURCE
 endif
 
-# Debug knob
-ifeq ($(DEBUG),1)
-  CFLAGS := $(filter-out -O2,$(CFLAGS))
-  CFLAGS += -g -O0 -DDEBUG
+ifeq ($(UNAME_S),Darwin)
+  CFLAGS += -D_DARWIN_C_SOURCE
 endif
 
-# Sanitizer knob (best used for tests; ASan may conflict with interposed malloc)
-ifeq ($(SAN),1)
-  CFLAGS  += -fsanitize=address,undefined -fno-omit-frame-pointer
-  LDFLAGS += -fsanitize=address,undefined
-endif
+# Hide everything by default; export only API via __attribute__((visibility("default")))
+CFLAGS += -fvisibility=hidden
 
 # ------------------------------- platform link mode -----------------------------
 
-EXPORTS ?= 1
-
 ifeq ($(UNAME_S),Linux)
-  SHARED_FLAG       := -shared
-  SONAME_FLAG       := -Wl,-soname,$(TARGET)
-  EXPORTS_MAP       := build/exports.map
-  EXPORTS_FLAG_DEF  := -Wl,--version-script,$(EXPORTS_MAP)
-  EXPORTS_FILE_DEF  := $(EXPORTS_MAP)
+	SHARED_FLAG := -shared
+	SONAME_FLAG := -Wl,-soname,libft_malloc.so
 else ifeq ($(UNAME_S),Darwin)
   SHARED_FLAG       := -dynamiclib
   INSTALL_NAME_FLAG := -Wl,-install_name,@rpath/$(TARGET)
-  EXPORTS_OSX       := build/exports_osx.txt
-  EXPORTS_FLAG_DEF  := -Wl,-exported_symbols_list,$(EXPORTS_OSX)
-  EXPORTS_FILE_DEF  := $(EXPORTS_OSX)
 else
   SHARED_FLAG       := -shared
   SONAME_FLAG       :=
-  EXPORTS_FLAG_DEF  :=
-  EXPORTS_FILE_DEF  :=
-endif
-
-ifeq ($(EXPORTS),1)
-  EXPORTS_FLAG := $(EXPORTS_FLAG_DEF)
-  EXPORTS_FILE := $(EXPORTS_FILE_DEF)
-else
-  EXPORTS_FLAG :=
-  EXPORTS_FILE :=
 endif
 
 # ------------------------------- targets ---------------------------------------
@@ -130,9 +91,13 @@ endif
 
 all: $(TARGET) symlink
 
-# Link the shared library
-$(TARGET): $(OBJS) $(EXPORTS_FILE)
-	$(CC) $(SHARED_FLAG) $(SONAME_FLAG) $(INSTALL_NAME_FLAG) $(LDFLAGS) -o $@ $(OBJS) $(EXPORTS_FLAG) $(LDLIBS)
+-include $(DEPS)
+
+
+$(TARGET): $(OBJS)
+	$(CC) $(SHARED_FLAG) $(SONAME_FLAG) $(INSTALL_NAME_FLAG) \
+	  $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+
 
 # Symlink that the subject expects
 symlink: $(TARGET)
@@ -147,27 +112,6 @@ build/%.o: lib/%.c
 build/third_party/%.o: third_party/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -Ithird_party -c $< -o $@
-
-# Auto-generated dependency files
--include $(DEPS)
-
-# Export list for Linux
-build/exports.map:
-	@mkdir -p $(dir $@)
-	@printf '%s\n' '{' \
-	'  global:' \
-	'    malloc;' \
-	'    free;' \
-	'    realloc;' \
-	'    show_alloc_mem;' \
-	'  local:' \
-	'    *;' \
-	'};' > $@
-
-# Export list for macOS (note leading underscores)
-build/exports_osx.txt:
-	@mkdir -p $(dir $@)
-	@printf '%s\n' '_malloc' '_free' '_realloc' '_show_alloc_mem' > $@
 
 # ------------------------------- unit tests ------------------------------------
 
@@ -185,111 +129,50 @@ test unit_test: $(TEST_BINS)
 	  for t in $(TEST_BINS); do echo "🏃 $$t"; "$$t"; done; \
 	fi
 
-# ------------------------------- integration tests (itests) --------------------
+# ---- integration tests (itests): all tests link to our lib + run with LD_PRELOAD
 
 ABS_TARGET := $(abspath $(TARGET))
 
 ifeq ($(UNAME_S),Darwin)
   PRELOAD_ENV := DYLD_INSERT_LIBRARIES="$(ABS_TARGET)" DYLD_FORCE_FLAT_NAMESPACE=1
+  RPATH_FLAG  := -Wl,-rpath,@loader_path
 else
   PRELOAD_ENV := LD_PRELOAD="$(ABS_TARGET)"
+  RPATH_FLAG  := -Wl,-rpath,'$$ORIGIN'
 endif
 
-ITEST_DIR        := build/itests
-# All itests except show_tests.c (that one needs our malloc)
-ITEST_SRCS_COMMON := $(filter-out itests/show_tests.c,$(wildcard itests/*.c))
-ITEST_BASENAMES   := $(notdir $(ITEST_SRCS_COMMON:.c=))
-ITEST_BINS_SYS    := $(patsubst itests/%.c,$(ITEST_DIR)/%.sys,$(ITEST_SRCS_COMMON))
-ITEST_BINS_CUSTOM := $(patsubst itests/%.c,$(ITEST_DIR)/%.custom,$(ITEST_SRCS_COMMON))
-
-# show_alloc_mem test (custom only)
-SHOWTEST_SRC := itests/show_tests.c
-SHOWTEST_BIN := $(ITEST_DIR)/show_tests.custom
-
-.PHONY: itest showtest clean-itests
+ITEST_DIR  := build/itests
+ITEST_SRCS := $(wildcard itests/*.c)
+ITEST_BINS := $(patsubst itests/%.c,$(ITEST_DIR)/%.custom,$(ITEST_SRCS))
 
 $(ITEST_DIR):
 	@mkdir -p $(ITEST_DIR)
 
-# System-malloc variants for common itests
-$(ITEST_DIR)/%.sys: itests/%.c | $(ITEST_DIR)
-	$(CC) $(CFLAGS) -Ilib \
-	  -DFT_ITEST_SYSTEM_ALLOC=1 -DFT_ITEST_ALLOC_TAG=\"system\" \
-	  $< -o $@ $(LDFLAGS) $(LDLIBS)
-
-# Custom-malloc variants for common itests
-$(ITEST_DIR)/%.custom: itests/%.c | $(ITEST_DIR)
-	$(CC) $(CFLAGS) -Ilib \
-	  -DFT_ITEST_SYSTEM_ALLOC=0 -DFT_ITEST_ALLOC_TAG=\"custom\" \
-	  $< -o $@ $(LDFLAGS) $(LDLIBS)
-
-# Custom-only show_alloc_mem test (links & runs only with our allocator)
-$(SHOWTEST_BIN): $(SHOWTEST_SRC) | $(ITEST_DIR)
-	$(CC) $(CFLAGS) -Ilib \
-	  -DFT_ITEST_SYSTEM_ALLOC=0 -DFT_ITEST_ALLOC_TAG=\"custom\" \
-	  $< -o $@ $(LDFLAGS) $(LDLIBS)
-
-# Run common itests both ways + the show test only with custom
-itest: $(TARGET) $(ITEST_BINS_SYS) $(ITEST_BINS_CUSTOM) $(SHOWTEST_BIN)
+# Normal itests: link to our lib and bake in an rpath that finds it in:
+#   build/itests (ORIGIN), build (..), and repo root (../..)
+$(ITEST_DIR)/%.custom: itests/%.c | $(ITEST_DIR) $(TARGET) symlink
+	$(CC) $(CFLAGS) -Ilib -I. $< -o $@ \
+	  -L. -lft_malloc -Wl,-rpath,'$$ORIGIN:$$ORIGIN/..:$$ORIGIN/../..' \
+	  $(LDFLAGS) $(LDLIBS)
+	  
+.PHONY: itest
+itest: $(TARGET) symlink $(ITEST_BINS)
 	@set -e; \
-	if [ -z "$(ITEST_SRCS_COMMON)" ]; then \
-	  echo "No integration tests found (itests/*.c)."; \
-	else \
-	  for base in $(ITEST_BASENAMES); do \
-	    SYS="$(ITEST_DIR)/$$base.sys"; \
-	    CUS="$(ITEST_DIR)/$$base.custom"; \
-	    echo "▶︎ $$SYS (system malloc)"; \
-	    "$$SYS"; \
-	    if command -v valgrind >/dev/null 2>&1; then \
-	      echo "  ↳ valgrind (system)"; \
-	      valgrind --quiet --leak-check=full \
-	        --errors-for-leak-kinds=definite,indirect \
-	        --error-exitcode=33 "$$SYS"; \
-	    else \
-	      echo "  (valgrind not found; skipping)"; \
-	    fi; \
-	    echo "▶︎ $$CUS (custom malloc via preload)"; \
-	    env $(PRELOAD_ENV) "$$CUS"; \
-	    if command -v valgrind >/dev/null 2>&1; then \
-	      echo "  ↳ valgrind (custom)"; \
-	      env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
-	        --errors-for-leak-kinds=definite,indirect \
-	        --error-exitcode=33 "$$CUS"; \
-	    else \
-	      echo "  (valgrind not found; skipping)"; \
-	    fi; \
-	  done; \
+	if [ -z "$(ITEST_SRCS)" ]; then \
+	  echo "No itests found (itests/*.c)."; exit 0; \
 	fi; \
-	echo "▶︎ $(SHOWTEST_BIN) (custom malloc via preload — show_alloc_mem)"; \
-	env $(PRELOAD_ENV) "$(SHOWTEST_BIN)"; \
-	if command -v valgrind >/dev/null 2>&1; then \
-	  echo "  ↳ valgrind (custom)"; \
-	  env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
-	    --errors-for-leak-kinds=definite,indirect \
-	    --error-exitcode=33 "$(SHOWTEST_BIN)"; \
-	else \
-	  echo "  (valgrind not found; skipping)"; \
-	fi
+	for t in $(ITEST_BINS); do \
+	  echo "▶︎ $$t (custom malloc via LD_PRELOAD)"; \
+	  env $(PRELOAD_ENV) "$$t"; \
+	done
 
-# If you want to run ONLY the show_alloc_mem test:
-showtest: $(TARGET) $(SHOWTEST_BIN)
-	@echo "▶︎ $(SHOWTEST_BIN) (custom malloc via preload — show_alloc_mem)"; \
-	env $(PRELOAD_ENV) "$(SHOWTEST_BIN)"; \
-	if command -v valgrind >/dev/null 2>&1; then \
-	  echo "  ↳ valgrind (custom)"; \
-	  env $(PRELOAD_ENV) valgrind --quiet --leak-check=full \
-	    --errors-for-leak-kinds=definite,indirect \
-	    --error-exitcode=33 "$(SHOWTEST_BIN)"; \
-	else \
-	  echo "  (valgrind not found; skipping)"; \
-	fi
-
-clean-itests:
+clean_itests:
 	$(RM) -r $(ITEST_DIR)
+
 
 # ------------------------------- cleaning --------------------------------------
 
-clean:
+clean: clean_itests
 	$(RM) $(TARGET) $(SYMLINK)
 
 fclean: clean clean-bootstrap
@@ -324,7 +207,7 @@ define _fmt_header_check
 endef
 
 # Write changes in-place
-fmt format: bootstrap-clang-format
+fmt format:
 	@{ command -v $(CLANG_FORMAT) >/dev/null 2>&1 || [ -x "$(LOCAL_CLANG_FORMAT)" ]; } || { \
 	  echo "error: clang-format not found. Run 'make bootstrap-clang-format' to install a local copy."; exit 127; }
 	$(_fmt_header_write)
@@ -382,13 +265,7 @@ else
   INTELLI_COMP := $(shell command -v clang 2>/dev/null || echo /usr/bin/clang)
 endif
 
-# Helper: if compile_commands.json exists, add a line to c_cpp_properties.json
-define _emit_compile_commands_json
-@if [ -f compile_commands.json ]; then \
-  printf '      ,\"compileCommands\": \"$$PWD/compile_commands.json\"\n' >> .vscode/c_cpp_properties.json; \
-fi
-endef
-
+# Intellisense
 bootstrap-intellisense:
 	@mkdir -p .vscode
 	@echo "Writing .vscode/c_cpp_properties.json for $(UNAME_S) ($(HOSTTYPE))"
