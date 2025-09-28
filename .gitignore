@@ -21,3 +21,5 @@ libft_malloc_*.so
 /node_modules/
 /package.json
 /package-lock.json
+
+bench_tests/bin
