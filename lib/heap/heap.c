@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/28 02:11:59 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 02:53:05 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,9 +59,6 @@ void* ft_heap_malloc(size_t n)
 	// 1) normalize & align
 	size_t need = ft_align_up(n ? n : 1, FT_ALIGN);
 
-	dbg_puts("need: ");
-	dbg_zu(need);
-	dbg_puts("\n");
 	// 2) classify
 	t_zone_class k = ft_heap_classify(need);
 

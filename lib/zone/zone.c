@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/28 02:11:01 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/28 02:53:15 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,9 +204,6 @@ int ft_zone_has_space(const t_zone* z)
 // FT_MALLOC_ERR_SLAB_INDEX if none
 static size_t ft_zone_find_first_free_block(const t_zone* z)
 {
-	dbg_puts("ft_zone_find_first_free_block: ");
-	dbg_zu((size_t)z);
-	dbg_puts("\n");
 	for (size_t i = 0; i < z->capacity; i++) {
 		if (z->occ[i] == FT_OCC_FREE)
 			return i;
