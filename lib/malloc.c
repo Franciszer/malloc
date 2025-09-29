@@ -3,17 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   malloc.c                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/20 16:17:02 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/28 02:53:01 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 01:00:05 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "malloc.h"
-
-#include <errno.h>
-#include "heap/heap.h"
 
 /* Public API just forwards to heap. These must be exported symbols. */
 void free(void* ptr)
@@ -37,7 +34,7 @@ void* realloc(void* ptr, size_t size)
 	return np;
 }
 
-void show_alloc_mem(void)
+void show_alloc_mem()
 {
-    ft_heap_show_alloc_mem();
+	// TODO!
 }

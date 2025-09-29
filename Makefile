@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
+#    By: francisco <francisco@student.42.fr>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/29 00:16:49 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/29 00:53:02 by francisco        ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -173,7 +173,7 @@ clean_itests:
 ##### Bench (subject) tests — isolated #####
 
 BENCH_CC              ?= $(CC)
-BENCH_CFLAGS          ?= -O2 -Wall -Wextra -Werror
+BENCH_CFLAGS          ?= -Wall -Wextra
 BENCH_TIME            ?= /usr/bin/time -v
 BENCH_PYTHON          ?= python3
 BENCH_RUNNER          ?= scripts/run_linux.sh
