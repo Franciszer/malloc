@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: francisco <francisco@student.42.fr>        +#+  +:+       +#+         #
+#    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/29 03:57:26 by francisco        ###   ########.fr        #
+#    Updated: 2025/09/29 17:02:33 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -170,88 +170,6 @@ clean_itests:
 	$(RM) -r $(ITEST_DIR)
 
 
-##### Bench (subject) tests — isolated #####
-
-BENCH_CC              ?= $(CC)
-BENCH_CFLAGS          ?= -Wall -Wextra
-BENCH_TIME            ?= /usr/bin/time -v
-BENCH_PYTHON          ?= python3
-BENCH_RUNNER          ?= scripts/run_linux.sh
-BENCH_SCRIPT          ?= scripts/bench_malloc.py
-BENCH_OUT_CSV         ?= bench.csv
-
-BENCH_DIR             ?= bench_tests
-BENCH_SRC_DIR         ?= $(BENCH_DIR)/src
-BENCH_BIN_DIR         ?= $(BENCH_DIR)/bin
-
-BENCH_SRCS            := $(wildcard $(BENCH_SRC_DIR)/test[0-5].c)
-BENCH_BINS            := $(patsubst $(BENCH_SRC_DIR)/%.c,$(BENCH_BIN_DIR)/%,$(BENCH_SRCS))
-
-.PHONY: bench_tests
-bench_tests: libft_malloc_build $(BENCH_BIN_DIR) $(BENCH_BINS) $(BENCH_RUNNER) $(BENCH_SCRIPT)
-	@ln -sf libft_malloc_$(HOSTTYPE).so libft_malloc.so || true
-	@rm -f $(BENCH_OUT_CSV)
-	@chmod +x $(BENCH_RUNNER)
-	$(BENCH_PYTHON) $(BENCH_SCRIPT) \
-	  --time "$(BENCH_TIME)" \
-	  --runner-custom "$(BENCH_RUNNER)" \
-	  --out "$(BENCH_OUT_CSV)" \
-	  $(BENCH_BINS)
-	@echo "Wrote $(BENCH_OUT_CSV)"
-
-.PHONY: bench_tests_quick
-bench_tests_quick: libft_malloc_build $(BENCH_BIN_DIR) $(BENCH_RUNNER) $(BENCH_SCRIPT)
-	@bins=""
-	@for t in test0 test1 test2; do \
-	  if [ -f "$(BENCH_SRC_DIR)/$$t.c" ]; then \
-	    $(MAKE) -s $(BENCH_BIN_DIR)/$$t; \
-	    bins="$$bins $(BENCH_BIN_DIR)/$$t"; \
-	  fi; \
-	done; \
-	if [ -z "$$bins" ]; then \
-	  echo "❌ No test0..2 sources found in $(BENCH_SRC_DIR)"; exit 1; \
-	fi; \
-	chmod +x $(BENCH_RUNNER); \
-	echo "➡️  Running: $$bins"; \
-	$(BENCH_PYTHON) $(BENCH_SCRIPT) --time "$(BENCH_TIME)" --runner-custom "$(BENCH_RUNNER)" --out "$(BENCH_OUT_CSV)" $$bins; \
-	echo "✅ Wrote $(BENCH_OUT_CSV)"
-
-.PHONY: libft_malloc_build
-libft_malloc_build:
-	@$(MAKE) -s re
-
-$(BENCH_BIN_DIR):
-	@mkdir -p $(BENCH_BIN_DIR)
-
-# Compile exactly like the subject
-$(BENCH_BIN_DIR)/test0: $(BENCH_SRC_DIR)/test0.c | $(BENCH_BIN_DIR)
-	$(BENCH_CC) $(BENCH_CFLAGS) -o $@ $<
-$(BENCH_BIN_DIR)/test1: $(BENCH_SRC_DIR)/test1.c | $(BENCH_BIN_DIR)
-	$(BENCH_CC) $(BENCH_CFLAGS) -o $@ $<
-$(BENCH_BIN_DIR)/test2: $(BENCH_SRC_DIR)/test2.c | $(BENCH_BIN_DIR)
-	$(BENCH_CC) $(BENCH_CFLAGS) -o $@ $<
-
-$(BENCH_BIN_DIR)/test3: $(BENCH_SRC_DIR)/test3.c | $(BENCH_BIN_DIR)
-	$(BENCH_CC) $(BENCH_CFLAGS) -o $@ $< -L. -lft_malloc
-$(BENCH_BIN_DIR)/test4: $(BENCH_SRC_DIR)/test4.c | $(BENCH_BIN_DIR)
-	$(BENCH_CC) $(BENCH_CFLAGS) -o $@ $< -L. -lft_malloc
-$(BENCH_BIN_DIR)/test5: $(BENCH_SRC_DIR)/test5.c | $(BENCH_BIN_DIR)
-	$(BENCH_CC) $(BENCH_CFLAGS) -o $@ $< -L. -lft_malloc
-
-.PHONY: bench_tests_clean
-
-bench_tests_clean:
-	@rm -f $(BENCH_BIN_DIR)/test0 $(BENCH_BIN_DIR)/test1 $(BENCH_BIN_DIR)/test2 \
-	        $(BENCH_BIN_DIR)/test3 $(BENCH_BIN_DIR)/test4 $(BENCH_BIN_DIR)/test5 \
-	        $(BENCH_OUT_CSV)
-
-$(BENCH_RUNNER):
-	@echo "❌ Missing $(BENCH_RUNNER). Put the subject's run_linux.sh in scripts/ and chmod +x." >&2
-	@false
-$(BENCH_SCRIPT):
-	@echo "❌ Missing $(BENCH_SCRIPT). Add your Python bench script there." >&2
-	@false
-
 # ---- clean ----
 .PHONY: clean_bench_tests
 clean_bench_tests:
@@ -265,7 +183,7 @@ $(RUN_CUSTOM):
 	@false
 # ------------------------------- cleaning --------------------------------------
 
-clean: clean_itests clean_bench_tests
+clean: clean_itests
 	$(RM) $(TARGET) $(SYMLINK)
 
 fclean: clean clean-bootstrap
