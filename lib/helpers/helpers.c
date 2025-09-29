@@ -6,35 +6,11 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:16:46 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/28 23:24:02 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 17:05:48 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "helpers.h"
-
-/* Binary search lower_bound for size_t, works for any ascending-sorted array.
-   Finds the *first* index i in [0, len] with arr[i] >= key (if any).
-   Returns arr[i] (the value), or 0 if not found.
-*/
-size_t lb_ge_size_t(const size_t* arr, size_t len, size_t key)
-{
-	if (!arr || len == 0)
-		return 0;
-
-	size_t lo = 0;
-	size_t hi = len; /* search in the half-open interval [lo, hi) */
-
-	while (lo < hi) {
-		size_t mid = lo + (hi - lo) / 2; /* no bit shifts; generic and safe */
-		if (arr[mid] < key) {
-			lo = mid + 1;
-		} else {
-			hi = mid;
-		}
-	}
-
-	return (lo < len) ? arr[lo] : 0;
-}
 
 void* ft_memcpy(void* dst, const void* src, size_t n)
 {
@@ -129,29 +105,4 @@ void ft_puthex_ptr(const void* p)
 	}
 	if (!started)
 		ft_putc('0');
-}
-
-void dbg_puts(const char* s)
-{
-	if (!s)
-		return;
-	const char* p = s;
-	while (*p)
-		p++;
-	/* write to STDERR; no buffering, no malloc */
-	(void)write(2, s, (size_t)(p - s));
-}
-
-void dbg_zu(size_t v)
-{
-	char buf[32];
-	int i = (int)sizeof(buf);
-	buf[--i] = '\n';
-	if (v == 0)
-		buf[--i] = '0';
-	while (v) {
-		buf[--i] = (char)('0' + (v % 10));
-		v /= 10;
-	}
-	(void)write(2, buf + i, (size_t)(sizeof(buf) - i));
 }
