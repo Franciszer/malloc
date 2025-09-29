@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/29 17:02:33 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/29 17:09:18 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -57,7 +57,7 @@ THIRD_PARTY_OBJS := $(patsubst %.c,build/%.o,$(THIRD_PARTY_SRCS))
 # ------------------------------- flags -----------------------------------------
 
 
-CFLAGS := -std=c11 -fPIC -Wall -Wextra -Ilib -I includes -MMD -MP
+CFLAGS := -std=c11 -fPIC -Wall -Wextra -Werror -Ilib -Iincludes -MMD -MP
 LDFLAGS ?=
 LDLIBS  ?=
 
@@ -170,17 +170,6 @@ clean_itests:
 	$(RM) -r $(ITEST_DIR)
 
 
-# ---- clean ----
-.PHONY: clean_bench_tests
-clean_bench_tests:
-	@rm -f $(BIN_DIR)/test0 $(BIN_DIR)/test1 $(BIN_DIR)/test2 \
-	       $(BIN_DIR)/test3 $(BIN_DIR)/test4 $(BIN_DIR)/test5 \
-	       $(OUT_CSV)
-
-# Friendly error if the wrapper is missing
-$(RUN_CUSTOM):
-	@echo "ERROR: $(RUN_CUSTOM) not found. Put the subject's run_linux.sh in scripts/ and chmod +x." >&2
-	@false
 # ------------------------------- cleaning --------------------------------------
 
 clean: clean_itests
