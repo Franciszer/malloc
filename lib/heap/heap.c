@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   heap.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/29 00:12:20 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 03:40:27 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 
 #include "heap.h"
 #include "zone/zone_list.h" // for ft_zone_ll_destroy, _first_with_space, _find_container_of
+#include "helpers/helpers.h"
 
 static inline t_ll_node** list_for(t_zone_class k);
 static inline size_t ft_bin_size_for_k(t_zone_class k);
@@ -35,20 +36,16 @@ __attribute__((destructor)) static void ft_malloc_dtor(void)
 }
 #endif
 
-// heap.c
 void ft_heap_init(size_t tiny_bin_size, size_t small_bin_size)
 {
 	g_heap = (t_heap){0};
 	g_heap.tiny_bin_size = tiny_bin_size;	// TINY_BIN_SIZE
 	g_heap.small_bin_size = small_bin_size; // SMALL_BIN_SIZE
 
-	// Subject wants ≥100× class max capacity; with one bin per class,
-	// that's ~100 blocks per slab.
 	g_heap.tiny_min_blocks = TINY_N_BLOCKS;
 	g_heap.small_min_blocks = SMALL_N_BLOCKS;
 }
 
-/* Unmap every zone in tiny/small/large and reset to init state. */
 void ft_heap_destroy(void)
 {
 	for (int i = 0; i < N_ZONE_CATEGORIES; ++i) {
@@ -58,25 +55,15 @@ void ft_heap_destroy(void)
 	g_heap.tiny_min_blocks = 0;
 	g_heap.small_min_blocks = 0;
 }
-#include "helpers/helpers.h"
-/* Allocator entry points (used by tests and wired by your malloc.c) */
-// heap.c
+
 void* ft_heap_malloc(size_t n)
 {
 	size_t req = n ? n : 1;
 
-	// classify on request size (not page-aligned size)
 	t_zone_class k = ft_heap_classify(req);
 
 	size_t need = ft_align_up(req, FT_ALIGN); // minimal ABI alignment (16)
 
-	ft_putstr("FT_HEAP_MALLOC");
-	ft_putstr("n: ");
-	ft_putusize(n);
-	ft_putstr("\n");
-	ft_putstr("need: ");
-	ft_putusize(need);
-	ft_putstr("\n");
 	t_ll_node** head = list_for(k);
 
 	if (k == FT_Z_LARGE) {
@@ -87,12 +74,16 @@ void* ft_heap_malloc(size_t n)
 		return z->mem_begin;
 	}
 
+	/* TINY OR MIN */
 	t_zone* z = ft_zone_ll_first_with_space(*head);
 	if (!z) {
-		size_t bin_size = ft_bin_size_for_k(k); // 128 or 4096
+		size_t bin_size = ft_bin_size_for_k(k);
 		size_t min_blocks = (k == FT_Z_TINY) ? g_heap.tiny_min_blocks : g_heap.small_min_blocks;
+
+		/* Overkill for subject requirement */
 		if (min_blocks < 100)
 			min_blocks = 100;
+
 		z = ft_zone_new(k, bin_size, min_blocks);
 		if (!z)
 			return NULL;
@@ -108,7 +99,6 @@ void ft_heap_free(void* p)
 
 	t_zone* z = ft_heap_find_owner(p);
 	if (!z) {
-		// invalid free
 		return;
 	}
 
@@ -131,7 +121,6 @@ void ft_heap_free(void* p)
 	}
 }
 
-/* Optional for later: */
 void* ft_heap_realloc(void* p, size_t n)
 {
 	if (!p)
@@ -143,7 +132,6 @@ void* ft_heap_realloc(void* p, size_t n)
 
 	t_zone* z = ft_heap_find_owner(p);
 	if (!z) {
-		// undefined by C; we choose to fail safe
 		return NULL;
 	}
 
@@ -182,8 +170,6 @@ void* ft_heap_realloc(void* p, size_t n)
 
 /* ---- helpers (tested) ---- */
 
-/* Classify request into TINY/SMALL/LARGE.
- */
 t_zone_class ft_heap_classify(size_t n)
 {
 	if (n == 0)
@@ -235,24 +221,22 @@ size_t ft_heap_total_free_in_class(t_zone_class klass)
 	return total;
 }
 
-// pick the right list by class
+// pick the right list by class using enum as an index
 static inline t_ll_node** list_for(t_zone_class k)
 {
 	return &g_heap.zls[(int)k];
 }
 
-/* Print TINY/SMALL/LARGE zone contents and a final "Total : N bytes" line. */
 size_t ft_heap_show_alloc_mem(void)
 {
 	size_t total = 0;
 
-	total += ft_zone_ll_print_sorted("TINY", g_heap.zls[FT_Z_TINY]);
-	total += ft_zone_ll_print_sorted("SMALL", g_heap.zls[FT_Z_SMALL]);
-	total += ft_zone_ll_print_sorted("LARGE", g_heap.zls[FT_Z_LARGE]);
+	total += ft_zone_ll_show_class("TINY", g_heap.zls[FT_Z_TINY]);
+	total += ft_zone_ll_show_class("SMALL", g_heap.zls[FT_Z_SMALL]);
+	total += ft_zone_ll_show_class("LARGE", g_heap.zls[FT_Z_LARGE]);
 
 	ft_putstr("Total : ");
 	ft_putusize(total);
 	ft_putstr(" bytes\n");
-
 	return total;
 }

@@ -6,7 +6,7 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/20 16:15:10 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/29 02:39:39 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/29 03:34:11 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 #define FT_MALLOC_H
 
 #include <stddef.h>
-#include "heap/heap.h"
 #include <errno.h>
 
 // exposes these functions as shared_lib

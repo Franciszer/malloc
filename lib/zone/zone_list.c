@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   zone_list.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 14:16:35 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/28 02:12:25 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 03:03:18 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,6 @@ void ft_zone_ll_destroy(t_ll_node** head)
 		t_zone* z = FT_CONTAINER_OF(n, t_zone, link);
 		ft_zone_destroy(z);
 	}
-	/* *head already NULL thanks to pop_front loop */
 }
 
 t_zone* ft_zone_ll_find_container_of(t_ll_node* head, const void* p)

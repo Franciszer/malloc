@@ -6,11 +6,12 @@
 /*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/20 16:17:02 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/29 01:00:05 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/29 03:33:50 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "malloc.h"
+#include "heap/heap.h"
 
 /* Public API just forwards to heap. These must be exported symbols. */
 void free(void* ptr)
