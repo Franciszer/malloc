@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:16:46 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/29 17:05:48 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 17:29:35 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,7 +76,7 @@ void ft_putusize(size_t v)
 	char buf[32];
 	size_t i = 0;
 	if (v == 0) {
-		ft_putc('0');
+		ft_putc('0');	
 		return;
 	}
 	while (v) {

@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/29 17:09:18 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/29 17:28:22 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -57,7 +57,7 @@ THIRD_PARTY_OBJS := $(patsubst %.c,build/%.o,$(THIRD_PARTY_SRCS))
 # ------------------------------- flags -----------------------------------------
 
 
-CFLAGS := -std=c11 -fPIC -Wall -Wextra -Werror -Ilib -Iincludes -MMD -MP
+CFLAGS := -std=c11 -fPIC -Wall -Wextra -Werror -Ilib -Iincludes -MMD -MP -fno-builtin-memcpy -fno-builtin-memset
 LDFLAGS ?=
 LDLIBS  ?=
 
