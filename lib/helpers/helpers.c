@@ -76,7 +76,7 @@ void ft_putusize(size_t v)
 	char buf[32];
 	size_t i = 0;
 	if (v == 0) {
-		ft_putc('0');	
+		ft_putc('0');
 		return;
 	}
 	while (v) {

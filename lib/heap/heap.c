@@ -112,15 +112,15 @@ void ft_heap_free(void* p)
 	// slab: return block
 	ft_zone_free_block(z, p);
 
-	 if (z->free_count == z->capacity) {
-        t_ll_node** head = list_for(z->klass);
-        // Keep at least one empty slab per class to avoid churn
-        if (ft_ll_len(head) > 1) {
-            ft_ll_remove(head, &z->link);
-            ft_zone_destroy(z);
-        }
-        // else: leave the single empty slab in the list
-    }
+	if (z->free_count == z->capacity) {
+		t_ll_node** head = list_for(z->klass);
+		// Keep at least one empty slab per class to avoid churn
+		if (ft_ll_len(head) > 1) {
+			ft_ll_remove(head, &z->link);
+			ft_zone_destroy(z);
+		}
+		// else: leave the single empty slab in the list
+	}
 }
 
 void* ft_heap_realloc(void* p, size_t n)

@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/23 21:50:00 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/29 17:54:10 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 17:58:33 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -272,6 +272,8 @@ static void print_zone_blocks(void* arg)
 
 static MunitResult test_zone_print_slab(const MunitParameter params[], void* user_data)
 {
+	(void)params;
+	(void)user_data;
 	/* tiny slab of bin=32, min_blocks=4 */
 	t_zone* z = ft_zone_new(FT_Z_TINY, 32, 4);
 	munit_assert_not_null(z);
@@ -301,6 +303,9 @@ static MunitResult test_zone_print_slab(const MunitParameter params[], void* use
 
 static MunitResult test_zone_print_large(const MunitParameter params[], void* user_data)
 {
+	(void)params;
+	(void)user_data;
+
 	t_zone* z = ft_zone_new(FT_Z_LARGE, 5008, 1);
 	munit_assert_not_null(z);
 	char* out = cap_stdout(print_zone_blocks, z);
