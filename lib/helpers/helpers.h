@@ -49,7 +49,7 @@ void ft_putstr(const char* s);
 void ft_putusize(size_t v);		   /* decimal */
 void ft_puthex_ptr(const void* p); /* prints like 0x1a2b3c */
 
-void dbg_puts(const char *s);
+void dbg_puts(const char* s);
 void dbg_zu(size_t v);
 
 #endif /* HELPERS_H */

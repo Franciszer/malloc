@@ -54,14 +54,18 @@ void* ft_memcpy(void* dst, const void* src, size_t n)
 
 /* ---------------- alignment & pagesize ---------------- */
 
-size_t ft_align_up(size_t x, size_t align) {
-    if (align == 0) return x;
-    size_t r = x % align;
-    if (r == 0) return x;
-    size_t add = align - r;
-    // overflow guard
-    if (x > SIZE_MAX - add) return SIZE_MAX;
-    return x + add;
+size_t ft_align_up(size_t x, size_t align)
+{
+	if (align == 0)
+		return x;
+	size_t r = x % align;
+	if (r == 0)
+		return x;
+	size_t add = align - r;
+	// overflow guard
+	if (x > SIZE_MAX - add)
+		return SIZE_MAX;
+	return x + add;
 }
 
 size_t ft_page_size(void)
@@ -127,19 +131,27 @@ void ft_puthex_ptr(const void* p)
 		ft_putc('0');
 }
 
-void dbg_puts(const char *s) {
-    if (!s) return;
-    const char *p = s;
-    while (*p) p++;
-    /* write to STDERR; no buffering, no malloc */
-    (void)write(2, s, (size_t)(p - s));
+void dbg_puts(const char* s)
+{
+	if (!s)
+		return;
+	const char* p = s;
+	while (*p)
+		p++;
+	/* write to STDERR; no buffering, no malloc */
+	(void)write(2, s, (size_t)(p - s));
 }
 
-void dbg_zu(size_t v) {
-    char buf[32];
-    int i = (int)sizeof(buf);
-    buf[--i] = '\n';
-    if (v == 0) buf[--i] = '0';
-    while (v) { buf[--i] = (char)('0' + (v % 10)); v /= 10; }
-    (void)write(2, buf + i, (size_t)(sizeof(buf) - i));
+void dbg_zu(size_t v)
+{
+	char buf[32];
+	int i = (int)sizeof(buf);
+	buf[--i] = '\n';
+	if (v == 0)
+		buf[--i] = '0';
+	while (v) {
+		buf[--i] = (char)('0' + (v % 10));
+		v /= 10;
+	}
+	(void)write(2, buf + i, (size_t)(sizeof(buf) - i));
 }

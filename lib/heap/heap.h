@@ -37,15 +37,15 @@ extern "C" {
  * - large : capacity-1 zones
  */
 typedef struct s_heap {
-    t_ll_node* zls[N_ZONE_CATEGORIES];
+	t_ll_node* zls[N_ZONE_CATEGORIES];
 
-    // NEW: bin sizes (one bin per class)
-    size_t tiny_bin_size;    // e.g. 128
-    size_t small_bin_size;   // e.g. 4096
+	// NEW: bin sizes (one bin per class)
+	size_t tiny_bin_size;  // e.g. 128
+	size_t small_bin_size; // e.g. 4096
 
-    // Number of blocks to pre-allocate in a slab (counts, not bytes)
-    size_t tiny_min_blocks;  // e.g. 100
-    size_t small_min_blocks; // e.g. 100
+	// Number of blocks to pre-allocate in a slab (counts, not bytes)
+	size_t tiny_min_blocks;	 // e.g. 100
+	size_t small_min_blocks; // e.g. 100
 } t_heap;
 /* Global heap state (define in heap.c) */
 extern t_heap g_heap;

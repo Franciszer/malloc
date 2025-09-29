@@ -26,7 +26,7 @@ typedef enum t_zone_class { FT_Z_TINY, FT_Z_SMALL, FT_Z_LARGE } t_zone_class;
 #define FT_OCC_USED 1u
 
 #if FT_OCC_FREE != 0
-# error "FT_OCC_FREE must be 0 to leverage mmap zero-fill."
+#error "FT_OCC_FREE must be 0 to leverage mmap zero-fill."
 #endif
 
 /* One zone = one bin size (uniform blocks). LARGE is capacity=1. */
@@ -35,12 +35,11 @@ typedef struct s_zone {
 	t_ll_node link;
 
 	/* ---- identity / geometry ---- */
-	t_zone_class klass; /* FT_Z_TINY / FT_Z_SMALL / FT_Z_LARGE */
-	size_t bin_size;	/* slab block size; for LARGE: payload size */
-	size_t capacity;	/* # of blocks (slab); 1 for LARGE */
-	size_t free_count;	/* # of free blocks (slab); 0 for LARGE */
-	size_t next_free_hint;  /* index to start the next search */
-
+	t_zone_class klass;	   /* FT_Z_TINY / FT_Z_SMALL / FT_Z_LARGE */
+	size_t bin_size;	   /* slab block size; for LARGE: payload size */
+	size_t capacity;	   /* # of blocks (slab); 1 for LARGE */
+	size_t free_count;	   /* # of free blocks (slab); 0 for LARGE */
+	size_t next_free_hint; /* index to start the next search */
 
 	/* ---- mapping & payload bounds (within the same mmap) ---- */
 	void* mem_begin; /* first block/payload byte (aligned to FT_ALIGN) */

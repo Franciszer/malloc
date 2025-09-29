@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   zone.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
+/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 19:02:36 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/29 00:15:35 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 02:49:08 by francisco        ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ static void ft_unmap(void* p, size_t bytes)
 
 t_zone* ft_zone_new(t_zone_class klass, size_t bin_size, size_t min_blocks)
 {
-	const size_t ps = ft_page_size();						  // from helpers
+	const size_t ps = ft_page_size();
 	const size_t hdr = ft_align_up(sizeof(t_zone), FT_ALIGN); // keep payload aligned
 
 	if (klass == FT_Z_LARGE) {
@@ -120,20 +120,9 @@ ft_zone_make_slab(t_zone_class klass, size_t hdr, size_t ps, size_t bsz, size_t 
 	z->free_count = cap;
 	z->next_free_hint = 0;
 
-	
 	z->mem_begin = (void*)((uintptr_t)z + hdr);
 	z->mem_end = (void*)((uintptr_t)z->mem_begin + pay_bytes);
-	ft_putstr("SLAB ");
-	ft_putstr(klass == FT_Z_TINY ? "TINY" : "SMALL");
-	ft_putstr(": bin=");
-	ft_putusize(bsz);
-	ft_putstr(" cap=");
-	ft_putusize(cap);
-	ft_putstr(" map=");
-	ft_putusize(ft_zone_mapped_bytes(z));
-	ft_putstr(" bytes\n");
 
-	// occ[] sits right after payload; length == capacity
 	z->occ = (uint8_t*)z->mem_end;
 
 	z->map_end = (void*)((uintptr_t)z + total);
@@ -171,18 +160,21 @@ void ft_zone_free_block(t_zone* z, void* p)
 	if (!z || z->klass == FT_Z_LARGE || !p)
 		return;
 
-	// Optional: fast bail if outside
+	// should not happen
 	if (!ft_zone_contains(z, p))
 		return;
 
 	size_t idx = ft_zone_index_of(z, p);
+
+	// should not happen
 	if (idx >= z->capacity)
-		return; // defensive
+		return;
 
 	if (z->occ[idx] == FT_OCC_USED) {
 		z->occ[idx] = FT_OCC_FREE;
 		z->free_count++;
-		if (idx < z->next_free_hint) z->next_free_hint = idx;
+		if (idx < z->next_free_hint)
+			z->next_free_hint = idx;
 	}
 }
 /* ---------------- helpers ---------------- */
@@ -192,7 +184,7 @@ int ft_zone_contains(const t_zone* z, const void* p)
 	if (!z || !p)
 		return 0;
 	uintptr_t a = (uintptr_t)p;
-	/* Only the payload/block area counts as "inside" for allocation purposes. */
+
 	return (a >= (uintptr_t)z->mem_begin) && (a < (uintptr_t)z->mem_end);
 }
 
@@ -208,24 +200,23 @@ int ft_zone_has_space(const t_zone* z)
 	return z && z->free_count > 0;
 }
 
-// returns index of free block
-// FT_MALLOC_ERR_SLAB_INDEX if none
-/* drop the const: we update the hint */
-static size_t ft_zone_find_first_free_block(t_zone *z)
+static size_t ft_zone_find_first_free_block(t_zone* z)
 {
-    if (!z || z->capacity == 0) return FT_MALLOC_ERR_SLAB_INDEX(z);
+	if (!z || z->capacity == 0)
+		return FT_MALLOC_ERR_SLAB_INDEX(z);
 
-    size_t i = z->next_free_hint;
-    for (size_t seen = 0; seen < z->capacity; ++seen) {
-        if (z->occ[i] == FT_OCC_FREE) {
-            /* advance hint for next call */
-            z->next_free_hint = (i + 1 == z->capacity) ? 0 : i + 1;
-            return i;
-        }
-        /* ++i with explicit wrap avoids any addition overflow concerns */
-        if (++i == z->capacity) i = 0;
-    }
-    return FT_MALLOC_ERR_SLAB_INDEX(z);
+	size_t i = z->next_free_hint;
+	for (size_t seen = 0; seen < z->capacity; ++seen) {
+		if (z->occ[i] == FT_OCC_FREE) {
+			/* advance hint for next call */
+			z->next_free_hint = (i + 1 == z->capacity) ? 0 : i + 1;
+			return i;
+		}
+		/* ++i with explicit wrap avoids any addition overflow concerns */
+		if (++i == z->capacity)
+			i = 0;
+	}
+	return FT_MALLOC_ERR_SLAB_INDEX(z);
 }
 
 /* find min base (zone pointer) in list; return NULL if empty */
@@ -260,22 +251,18 @@ size_t ft_zone_ll_show_class(const char* label, t_ll_node* head)
 	size_t total = 0;
 
 	if (!head) {
-		/* nothing to print for this class; but still print an empty header? */
-		/* Subject examples always show classes that exist; here we omit empty classes */
 		return 0;
 	}
 
-	/* class header uses the **lowest zone base** address for this list */
 	const t_zone* first = find_min_zone(head);
 	if (!first)
 		return 0;
 
 	ft_putstr(label);
 	ft_putstr(" : ");
-	ft_puthex_ptr(first); /* zone base address (mapping start = struct address) */
+	ft_puthex_ptr(first);
 	ft_putstr("\n");
 
-	/* now print each zone in ascending base order */
 	uintptr_t last = 0;
 	const t_zone* z = NULL;
 	while ((z = find_next_zone_after(head, last))) {
@@ -287,40 +274,40 @@ size_t ft_zone_ll_show_class(const char* label, t_ll_node* head)
 
 size_t ft_zone_print_blocks(const t_zone* z)
 {
-    if (!z) return 0;
+	if (!z)
+		return 0;
 
 	if (z->klass != FT_Z_LARGE && z->free_count == z->capacity) {
-        return 0;
-    }
+		return 0;
+	}
 
-    size_t total = 0;
+	size_t total = 0;
 
-    if (z->klass == FT_Z_LARGE) {
-        /* one big payload */
-        void *beg = z->mem_begin;
-        void *end = (void *)((char*)beg + z->bin_size); /* or z->mem_end */
-        ft_puthex_ptr(beg);
-        ft_putstr(" - ");
-        ft_puthex_ptr(end);
-        ft_putstr(" : ");
-        ft_putusize(z->bin_size);
-        ft_putstr(" bytes\n");
-        return z->bin_size;
-    }
+	if (z->klass == FT_Z_LARGE) {
 
-    /* slab: print each used block */
-    for (size_t i = 0; i < z->capacity; ++i) {
-        if (z->occ[i] == FT_OCC_USED) {
-            void *beg = (void *)((char*)z->mem_begin + i * z->bin_size);
-            void *end = (void *)((char*)beg + z->bin_size);
-            ft_puthex_ptr(beg);
-            ft_putstr(" - ");
-            ft_puthex_ptr(end);
-            ft_putstr(" : ");
-            ft_putusize(z->bin_size);
-            ft_putstr(" bytes\n");
-            total += z->bin_size;
-        }
-    }
-    return total;
+		void* beg = z->mem_begin;
+		void* end = (void*)((char*)beg + z->bin_size);
+		ft_puthex_ptr(beg);
+		ft_putstr(" - ");
+		ft_puthex_ptr(end);
+		ft_putstr(" : ");
+		ft_putusize(z->bin_size);
+		ft_putstr(" bytes\n");
+		return z->bin_size;
+	}
+
+	for (size_t i = 0; i < z->capacity; ++i) {
+		if (z->occ[i] == FT_OCC_USED) {
+			void* beg = (void*)((char*)z->mem_begin + i * z->bin_size);
+			void* end = (void*)((char*)beg + z->bin_size);
+			ft_puthex_ptr(beg);
+			ft_putstr(" - ");
+			ft_puthex_ptr(end);
+			ft_putstr(" : ");
+			ft_putusize(z->bin_size);
+			ft_putstr(" bytes\n");
+			total += z->bin_size;
+		}
+	}
+	return total;
 }
