@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/29 16:17:24 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 17:52:28 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,12 +112,15 @@ void ft_heap_free(void* p)
 	// slab: return block
 	ft_zone_free_block(z, p);
 
-	// trim of fully-empty zone:
-	if (z->free_count == z->capacity) {
-		t_ll_node** head = list_for(z->klass);
-		ft_ll_remove(head, &z->link);
-		ft_zone_destroy(z);
-	}
+	 if (z->free_count == z->capacity) {
+        t_ll_node** head = list_for(z->klass);
+        // Keep at least one empty slab per class to avoid churn
+        if (ft_ll_len(head) > 1) {
+            ft_ll_remove(head, &z->link);
+            ft_zone_destroy(z);
+        }
+        // else: leave the single empty slab in the list
+    }
 }
 
 void* ft_heap_realloc(void* p, size_t n)
