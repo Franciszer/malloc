@@ -33,25 +33,21 @@ int main(void) {
 
     show_alloc_mem();
 
-    /* free a couple, then show again */
-    // free(t2);
     free(t1);
+    free(t2);
 
     puts("---- show_alloc_mem (after partial frees) ----");
     show_alloc_mem();
 
-    /* clean up */
-    // free(t1);
-    free(t2);
 
     puts("---- show_alloc_mem (after all frees) ----");
-    show_alloc_mem();
     free(s1);
     free(s2);
     free(s3);
     free(s4);
     free(L);
-
+    
+    show_alloc_mem();
     puts("show_test: OK");
     return 0;
 }
