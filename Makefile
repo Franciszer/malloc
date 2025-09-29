@@ -6,7 +6,7 @@
 #    By: francisco <francisco@student.42.fr>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/29 03:42:04 by francisco        ###   ########.fr        #
+#    Updated: 2025/09/29 03:57:26 by francisco        ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -57,7 +57,7 @@ THIRD_PARTY_OBJS := $(patsubst %.c,build/%.o,$(THIRD_PARTY_SRCS))
 # ------------------------------- flags -----------------------------------------
 
 
-CFLAGS := -std=c11 -fPIC -Wall -Wextra -Ilib -MMD -MP
+CFLAGS := -std=c11 -fPIC -Wall -Wextra -Ilib -I includes -MMD -MP
 LDFLAGS ?=
 LDLIBS  ?=
 
