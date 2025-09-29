@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 21:45:28 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 21:45:30 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 17:01:01 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -115,39 +115,6 @@ static void do_free(Slot *s) {
     s->sz = 0;
     s->tag = 0;
     s->used = 0;
-}
-
-static void do_realloc(Slot *s, int idx) {
-    if (!s->used) return;
-    /* verify old content before realloc */
-    if (!check_pattern(s, idx)) {
-        fprintf(stderr, "pattern mismatch BEFORE realloc at slot %d\n", idx);
-        exit(2);
-    }
-
-    size_t new_sz = choose_size();
-    /* Sometimes exercise realloc(ptr, 0) which frees */
-    if ((xr() & 0x3FF) == 0) new_sz = 0;
-
-    void *np = realloc(s->p, new_sz);
-    if (!np && new_sz != 0) {
-        fprintf(stderr, "realloc failed (new=%zu)\n", new_sz);
-        exit(3);
-    }
-
-    /* If new_sz == 0, realloc acts like free and returns NULL */
-    s->p = np;
-    s->sz = new_sz;
-    if (new_sz == 0) {
-        s->tag = 0;
-        s->used = 0;
-        return;
-    }
-
-    /* Verify prefix retained: min(old,new) */
-    size_t min_sz = (s->sz < new_sz) ? s->sz : new_sz; /* careful: s->sz updated above; stash old first? */
-    /* We need old size for check. Store before overwriting: */
-    /* Fix: capture old size prior to update. */
 }
 
 int main(void) {

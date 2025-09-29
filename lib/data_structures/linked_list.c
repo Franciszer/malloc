@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   linked_list.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
+/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 16:37:04 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/25 10:27:47 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/29 16:18:29 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ void ft_ll_push_back(t_ll_node** head, t_ll_node* n)
 	t_ll_node* tail = *head;
 	while (tail->next)
 		tail = tail->next;
-	/* Insert after tail */
+
 	n->prev = tail;
 	n->next = NULL;
 	tail->next = n;

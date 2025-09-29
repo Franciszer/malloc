@@ -9,9 +9,9 @@ static size_t pick_size(unsigned seed) {
     // deterministic pseudo-random mix across classes
     unsigned r = seed * 1103515245u + 12345u;
     switch (r % 3u) {
-        case 0: return (r % TINY_MAX) + 1;                 // tiny
-        case 1: return TINY_MAX + 1 + (r % (SMALL_MAX - TINY_MAX)); // small
-        default: return SMALL_MAX + 1 + (r % 4096);        // large up to ~4K over
+        case 0: return (r % TINY_BIN_SIZE) + 1;                 // tiny
+        case 1: return TINY_BIN_SIZE + 1 + (r % (SMALL_BIN_SIZE - TINY_BIN_SIZE)); // small
+        default: return SMALL_BIN_SIZE + 1 + (r % 4096);        // large up to ~4K over
     }
 }
 

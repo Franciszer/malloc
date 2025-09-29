@@ -6,18 +6,18 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/24 21:25:12 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/24 21:25:13 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 16:59:43 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "heap/heap.h"  // TINY_MAX, SMALL_MAX
+#include "heap/heap.h"  // TINY_BIN_SIZE, SMALL_BIN_SIZE
 
 int main(void) {
-    const size_t n1 = TINY_MAX + 1;          // small lower bound
-    const size_t n2 = (SMALL_MAX + TINY_MAX) / 2;
+    const size_t n1 = TINY_BIN_SIZE + 1;          // small lower bound
+    const size_t n2 = (SMALL_BIN_SIZE + TINY_BIN_SIZE) / 2;
 
     char *a = malloc(n1);
     char *b = malloc(n2);

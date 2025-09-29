@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   heap.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: francisco <francisco@student.42.fr>        +#+  +:+       +#+        */
+/*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 11:50:20 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/29 03:40:27 by francisco        ###   ########.fr       */
+/*   Updated: 2025/09/29 16:17:24 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@ t_heap g_heap = {0};
 #ifndef FT_HEAP_NO_CTOR
 __attribute__((constructor)) static void ft_malloc_ctor(void)
 {
-	write(2, "libft_malloc ctor\n", 18);
 	ft_heap_init(TINY_BIN_SIZE, SMALL_BIN_SIZE); /* or your chosen min_blocks */
 }
 #endif
