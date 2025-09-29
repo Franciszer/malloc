@@ -6,7 +6,7 @@
 #    By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/09/22 12:49:06 by francisco         #+#    #+#              #
-#    Updated: 2025/09/29 17:28:22 by frthierr         ###   ########.fr        #
+#    Updated: 2025/09/29 18:31:15 by frthierr         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -175,7 +175,7 @@ clean_itests:
 clean: clean_itests
 	$(RM) $(TARGET) $(SYMLINK)
 
-fclean: clean clean-bootstrap
+fclean: clean
 	$(RM) -r build
 
 re: fclean all
