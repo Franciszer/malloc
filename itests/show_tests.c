@@ -39,8 +39,9 @@ int main(void) {
     puts("---- show_alloc_mem (after partial frees) ----");
     show_alloc_mem();
 
-
+    
     puts("---- show_alloc_mem (after all frees) ----");
+
     free(s1);
     free(s2);
     free(s3);

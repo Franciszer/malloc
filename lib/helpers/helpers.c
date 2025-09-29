@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/22 17:16:46 by frthierr          #+#    #+#             */
-/*   Updated: 2025/09/29 17:29:35 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 18:55:53 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,10 +89,10 @@ void ft_putusize(size_t v)
 
 void ft_puthex_ptr(const void* p)
 {
-	static const char hexd[] = "0123456789abcdef";
+	static const char hex[] = "0123456789abcdef";
 	uintptr_t x = (uintptr_t)p;
 	ft_putstr("0x");
-	/* print without leading zeros but at least one nibble */
+
 	int started = 0;
 	for (int sh = (int)(sizeof(uintptr_t) * 8 - 4); sh >= 0; sh -= 4) {
 		unsigned nib = (unsigned)((x >> sh) & 0xF);
@@ -101,7 +101,7 @@ void ft_puthex_ptr(const void* p)
 				continue;
 			started = 1;
 		}
-		ft_putc(hexd[nib]);
+		ft_putc(hex[nib]);
 	}
 	if (!started)
 		ft_putc('0');
