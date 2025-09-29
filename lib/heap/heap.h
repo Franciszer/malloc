@@ -6,7 +6,7 @@
 /*   By: frthierr <frthierr@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/09/21 22:32:52 by francisco         #+#    #+#             */
-/*   Updated: 2025/09/28 23:01:57 by frthierr         ###   ########.fr       */
+/*   Updated: 2025/09/29 17:42:47 by frthierr         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ extern "C" {
 #define SMALL_N_BLOCKS 128
 
 #define TINY_BIN_SIZE 128
-#define SMALL_BIN_SIZE 4096
+#define SMALL_BIN_SIZE 1024
 
 #define N_ZONE_CATEGORIES 3
 
